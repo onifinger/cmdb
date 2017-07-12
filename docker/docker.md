@@ -4,19 +4,17 @@
 CentOS Linux release 7.3.1611 をminimul インストール  
 
 ## yumの設定  
-環境に応じてProxyを設定する。  
-
-環境に応じてリポジトリサーバの設定を行う。  
+### 環境に応じてProxyを設定
+### 環境に応じてリポジトリの設定  
 下記はftp.riken.jpに変更する場合。
 ```
 # cd /etc/yum.repos.d
 # sed -i -e "s/^mirrorlist\=http\:\/\/mirrorlist\.centos\.org\//\#mirrorlist\=http\:\/\/mirrorlist\.centos\.org\//g" ./*
 # sed -i -e "s/^\#baseurl\=http\:\/\/mirror\.centos\.org\//baseurl\=http\:\/\/ftp\.riken\.jp\/Linux\//g" ./*
 ```
-
-## リポジトリの設定  
-必要に応じてリポジトリの追加を行う。docker単体であれば追加不要。  
-下記はepelを追加  
+### リポジトリの追加  
+docker単体であれば追加不要だが、今回、ansibleを使用するためEPELを追加する。  
+下記はリポジトリサーバを、ftp.riken.jpに変更もしている。
 ```
 # cd /etc/yum.repos.d
 # yum install epel-release -y
