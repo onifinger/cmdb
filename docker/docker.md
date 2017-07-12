@@ -1,7 +1,7 @@
 # dockerのインストール  
 
 ## OSセットアップ  
-entOS Linux release 7.3.1611 をminimul インストール  
+centOS Linux release 7.3.1611 をminimul インストール  
 
 ## yumの設定  
 環境に応じてProxyを設定する。  
