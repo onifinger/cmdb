@@ -24,6 +24,11 @@ entOS Linux release 7.3.1611 をminimul インストール
 # sed -i -e "s/^#baseurl\=http\:\/\/download.fedoraproject.org\/pub/baseurl\=http\:\/\/ftp\.riken\.jp\/Linux\/fedora/g" ./*
 ```
 
+## ansibleのインストール
+```
+# yum install ansible -y
+```
+
 ## SELINUX無効  
 ```
 # vi /etc/sysconfig/selinux
