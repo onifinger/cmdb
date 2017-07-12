@@ -24,9 +24,9 @@ entOS Linux release 7.3.1611 をminimul インストール
 # sed -i -e "s/^#baseurl\=http\:\/\/download.fedoraproject.org\/pub/baseurl\=http\:\/\/ftp\.riken\.jp\/Linux\/fedora/g" ./*
 ```
 
-## ansibleのインストール
+## ansible , git のインストール
 ```
-# yum install ansible -y
+# yum install ansible git -y
 ```
 
 ## dockerセットアップ用Playbookの作成
