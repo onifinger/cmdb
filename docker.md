@@ -29,7 +29,14 @@ entOS Linux release 7.3.1611 をminimul インストール
 # yum install ansible -y
 ```
 
-## SELINUX無効  
+## dockerセットアップ用Playbookの作成
+```
+# mkdir ~/docker
+# cd ~/docker
+# mkdir -p roles/common/{tasks,handlers,templates,files,vars,defaults,meta,library}
+```
+
+## SELINUX無効  
 ```
 # vi /etc/sysconfig/selinux
 ･･･
