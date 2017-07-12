@@ -1,0 +1,9 @@
+# proxyを使うときはy 使わないときはn
+use_proxy: n
+# 認証ありの場合:http://user:password@host:port
+# 認証なしの場合:http://host:port
+proxy_server: 'http://user:password@host:port'
+# プロキシサーバを利用しないプライベートレジストリありはy なしはn
+use_no_proxy: n
+# プロキシサーバを利用しないプライベートレジストリ
+no_proxy: 'no_proxy=local.example.com,192.168.1.1'

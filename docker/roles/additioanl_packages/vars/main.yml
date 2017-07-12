@@ -1,0 +1,7 @@
+pkgs:
+  - bridge-utils
+  - net-tools
+  - telnet
+  - wget
+  - tcpdump
+  - sysstat

@@ -1,0 +1,38 @@
+- name: yum install docker
+  yum:
+    name: docker 
+    state: latest
+
+- name: set proxy to docker
+  lineinfile:
+    path: /lib/systemd/system/docker.service
+    insertbefore: ".*ExecStart.*"
+    line: "Environment=\"http_proxy={{ proxy_server }}\""
+  when: use_proxy == "y"
+
+- name: unset proxy to docker
+  lineinfile:
+    path: /lib/systemd/system/docker.service
+    state: absent
+    regexp: "Environment=\'http_proxy=.*"
+  when: use_proxy == "n"
+
+- name: set no_proxy to docker
+  lineinfile:
+    path: /lib/systemd/system/docker.service
+    insertbefore: ".*ExecStart.*"
+    line: "Environment=\"no_proxy={{ no_proxy }}\""
+  when: use_no_proxy == "y"
+
+- name: unset no_proxy to docker
+  lineinfile:
+    path: /lib/systemd/system/docker.service
+    state: absent
+    regexp: "Environment=\'no_proxy=.*"
+  when: use_no_proxy == "n"
+
+- name: start docker
+  service:
+    name: docker
+    state: started 
+    enabled: yes
