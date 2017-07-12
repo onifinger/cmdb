@@ -29,89 +29,51 @@ entOS Linux release 7.3.1611 をminimul インストール
 # yum install ansible git -y
 ```
 
-## dockerセットアップ用Playbookの作成
+## dockerセットアップ用Playbookのダウンロード
 ```
-# mkdir ~/docker
-# cd ~/docker
-# mkdir -p roles/common/{tasks,handlers,templates,files,vars,defaults,meta,library}
-```
-
-## SELINUX無効  
-```
-# vi /etc/sysconfig/selinux
-･･･
-SELINUX=disabled
-･･･
-# setenforce 0
-```
-## firewalld 無効  
-```
-# systemctl stop firewalld
-# systemctl disable firewalld
-```
-## iptables 有効  
-```
-# yum install iptables-services
-# systemctl start iptables
-# systemctl enable iptables
+# cd ~/
+# git clone http://github.com/taka379sy/cmdb.git
 ```
 
-## dockerインストール  
+## インストール
 ```
-# yum install docker -y
-# systemctl start docker
-# systemctl enable docker
+# cd ~/cmdb/docker
 ```
-
-## proxyの設定
+dockerリポジトリサーバへのアクセスに、proxyの設定が必要な場合、以下のファイルの編集を行う。
 ```
-vi /lib/systemd/system/docker.service 
-```
-Serviceのセクションにプロキシの設定追加
-```
-[Service]
-...
-Environment="HTTP_PROXY=http://user:pass@xx.xx.xx.xx:XXXX"
-ExecStart=/usr/bin/dockerd-current \
+# vi roles/docker/vars/main.yml
 ```
 ```
-systemctl daemon-reload
-systemctl restart docker
+# proxyを使うときはy 使わないときはn
+use_proxy: n
+# 認証ありの場合:http://user:password@host:port
+# 認証なしの場合:http://host:port
+proxy_server: 'http://user:password@host:port'
+# プロキシサーバを利用しないプライベートレジストリありはy なしはn
+use_no_proxy: n
+# プロキシサーバを利用しないプライベートレジストリ
+no_proxy: 'no_proxy=local.example.com,192.168.1.1'
 ```
-
-## 必要ではないが何かと使うツールのインストール  
+追加で使用したいパッケージがある場合は、以下のファイルを編集
 ```
-# yum install bridge-utils net-tools telnet wget tcpdump git -y
-# yum install epel-release -y
-# yum install ansible -y
-```
-
-## 今回の環境で、Apache,Squidを使用するため、インストール。
-```
-# yum install httpd squid -y
-# iptables -I INPUT -p tcp -m state --state NEW -m tcp --dport 80 -j ACCEPT
-# iptables -I INPUT -p tcp -m state --state NEW -m tcp --dport 3128 -j ACCEPT
-# systemctl start httpd
-# systemctl start squid
-# systemctl enable httpd
-# systemctl enable squid
-# vi /etc/sysconfig/iptables
+# vi roles/additioanl_packages/vars/main.yml
 ```
 ```
-# sample configuration for iptables service
-# you can edit this manually or use system-config-firewall
-# please do not ask us to add additional ports/services to this default configuration
-*filter
-:INPUT ACCEPT [0:0]
-:FORWARD ACCEPT [0:0]
-:OUTPUT ACCEPT [0:0]
--A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
--A INPUT -p icmp -j ACCEPT
--A INPUT -i lo -j ACCEPT
--A INPUT -p tcp -m state --state NEW -m tcp --dport 22 -j ACCEPT
--A INPUT -j REJECT --reject-with icmp-host-prohibited
--A INPUT -p tcp -m state --state NEW -m tcp --dport 80 -j ACCEPT
--A INPUT -p tcp -m state --state NEW -m tcp --dport 3128 -j ACCEPT
--A FORWARD -j REJECT --reject-with icmp-host-prohibited
-COMMIT
+pkgs:
+  - bridge-utils
+  - net-tools
+  - telnet
+  - wget
+  - tcpdump
+  - sysstat
 ```
+インストール
+```
+# ansible-playbook docker.yml --connection=local -i hosts
+```
+## 上記プレイブックは、以下の処理を行っている。
+### SELINUX　無効  
+### firewalld　停止、無効  
+### iptables　インストール、有効、起動  
+### docker　インストール、proxy設定、有効、起動  
+### 必須ではないが何かと使うツールのインストール  
