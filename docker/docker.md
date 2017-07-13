@@ -46,13 +46,13 @@ docker単体であれば追加不要だが、今回、ansibleを使用するた�
 
 ## dockerセットアップ用Playbookのダウンロード
 ```
-# cd ~/
+# cd /opt
 # git clone http://github.com/taka379sy/cmdb.git
 ```
 
 ## アカウントの作成
 ```
-# cd ~/cmdb/docker
+# cd /opt/cmdb/docker
 ```
 ansible実行用のユーザ編集
 ```
@@ -71,12 +71,12 @@ users:
 ## dockerのインストール
 以降の作業は、上記で作成したアカウント(ansibleuser)で実行する。
 ```
-# cd ~/cmdb/docker
+# cd /opt/cmdb/docker
 ```
 ### proxyの設定
 dockerリポジトリサーバへのアクセスに、proxyの設定が必要な場合、以下のファイルの編集を行う。
 ```
-# vi cmdb/docker/host_vars/localhost
+# vi /opt/cmdb/docker/host_vars/localhost
 ```
 適宜、Proxyの設定等を行う。
 ```
