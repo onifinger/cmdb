@@ -1,0 +1,33 @@
+- name: create group
+  group:
+    name: "{{ item.name }}"
+    gid: "{{ item.uid }}"
+  with_items: "{{ users }}"
+
+- name: create user
+  user:
+    name: "{{ item.name }}"
+    password: "{{ item.password }}"
+    uid: "{{ item.uid }}"
+    generate_ssh_key: yes
+  with_items: "{{ users }}"
+
+- name: set sudo
+  lineinfile:
+    dest: "/etc/sudoers.d/{{ item.name }}"
+    line: "{{ item.name }} ALL=(ALL) NOPASSWD:ALL"
+    create: yes
+    owner: root
+    group: root
+    mode: 0440
+  with_items: "{{ users }}"
+
+- name: Setting environment variables
+  blockinfile:
+    dest: "/home/{{ item.name }}/.bash_profile"
+    insertafter: "^PATH=.*"
+    block: |
+      PATH={{ pydir }}/bin:$PATH
+      PYTHONPATH={{ pypath }}:$PYTHONPATH
+      export PYTHONPATH
+  with_items: "{{ users }}"

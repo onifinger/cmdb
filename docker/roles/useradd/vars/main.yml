@@ -1,0 +1,2 @@
+users:
+  - { name: 'ansibleuser', password: "{{ 'password'|password_hash('sha512')}}" , uid: '601' }
