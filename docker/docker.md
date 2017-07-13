@@ -69,6 +69,7 @@ users:
 ```
 
 ## dockerのインストール
+以降の作業は、上記で作成したアカウント(ansibleuser)で実行する。
 ```
 # cd ~/cmdb/docker
 ```
