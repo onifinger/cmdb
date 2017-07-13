@@ -1,9 +1,9 @@
 # dockerのインストール  
 
 ## OSセットアップ  
-CentOS Linux release 7.3.1611 をminimul インストール  
+CentOS Linux release 7.3.1611 をminimul インストール  
 
-## yumの設定  
+## yumの設定  
 ### 環境に応じてProxyを設定
 ### 環境に応じてリポジトリの設定  
 下記はftp.riken.jpに変更する場合。
@@ -20,6 +20,12 @@ docker単体であれば追加不要だが、今回、ansibleを使用するた�
 # yum install epel-release -y
 # sed -i -e "s/^mirrorlist\=https\:\/\/mirrors\.fedoraproject\.org/\#mirrorlist\=https\:\/\/mirrors\.fedoraproject\.org/g" ./*
 # sed -i -e "s/^#baseurl\=http\:\/\/download.fedoraproject.org\/pub/baseurl\=http\:\/\/ftp\.riken\.jp\/Linux\/fedora/g" ./*
+```
+
+## OSを最新の状態にアップデート、再起動
+```
+# yum update -y
+# shutdown -h now
 ```
 
 ## ansible , git のインストール
