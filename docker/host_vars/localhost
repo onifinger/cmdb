@@ -1,9 +1,22 @@
 # proxyを使うときはy 使わないときはn
 use_proxy: n
+
 # 認証ありの場合:http://user:password@host:port
 # 認証なしの場合:http://host:port
 proxy_server: 'http://user:password@host:port'
+
 # プロキシサーバを利用しないプライベートレジストリありはy なしはn
 use_no_proxy: n
+
 # プロキシサーバを利用しないプライベートレジストリ
 no_proxy: 'no_proxy=local.example.com,192.168.1.1'
+
+# Pythonモジュールをインストールするディレクトリ
+pydir: /opt/ansible_python
+pypath: "{{ pydir }}/lib/python2.7/site-packages"
+
+# 独自ネットワークの設定 ネットワーク名、サブネット、ゲートウェイ（ホストアドレス）、DHCP帯域
+network_name: bridge2
+subnet: 192.168.10.0/24
+gateway: 192.168.10.1
+iprange: 192.168.10.64/26
