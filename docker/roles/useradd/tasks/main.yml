@@ -9,6 +9,7 @@
     name: "{{ item.name }}"
     password: "{{ item.password }}"
     uid: "{{ item.uid }}"
+    group: "{{ item.name }}"
     generate_ssh_key: yes
   with_items: "{{ users }}"
 
@@ -24,10 +25,11 @@
 
 - name: Setting environment variables
   blockinfile:
-    dest: "/home/{{ item.name }}/.bash_profile"
+    dest: "/home/{{ item.name }}/.bashrc"
     insertafter: "^PATH=.*"
     block: |
-      PATH={{ pydir }}/bin:$PATH
-      PYTHONPATH={{ pypath }}:$PYTHONPATH
-      export PYTHONPATH
+      alias rm='rm -i'
+      alias cp='cp -i'
+      alias mv='mv -i'
   with_items: "{{ users }}"
+

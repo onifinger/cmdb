@@ -1,0 +1,11 @@
+- name: set "executable" to ansible.cfg
+  lineinfile:
+    dest: "/etc/ansible/ansible.cfg"
+    insertafter: "^#executable"
+    line: "executable = /bin/bash -l"
+
+- name: set "ssh_args" to ansible.cfg
+  lineinfile:
+    dest: "/etc/ansible/ansible.cfg"
+    insertafter: "^#ssh_args"
+    line: "ssh_args = -o ControlMaster=auto -o ControlPersist=60s -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"

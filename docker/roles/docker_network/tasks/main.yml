@@ -1,0 +1,7 @@
+- name: create a network with options
+  docker_network:
+    name: "{{ network_name }}"
+    ipam_options:
+      subnet: "{{ subnet }}"
+      gateway: "{{ gateway }}"
+      iprange: "{{ iprange }}"

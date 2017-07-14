@@ -1,5 +1,11 @@
-- hosts: all
+- hosts: localhost
   become: yes
   roles:
     - useradd
+    - profile
+    - selinux
+    - firewalld
+    - iptables
+    - ansible
+    - additioanl_packages
 

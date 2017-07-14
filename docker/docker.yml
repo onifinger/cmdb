@@ -1,9 +1,6 @@
-- hosts: all
+- hosts: localhost
   become: yes
   roles:
-    - selinux
-    - firewalld
-    - iptables
-    - docker
-    - additioanl_packages
+    - docker_install
+    - docker_network
 

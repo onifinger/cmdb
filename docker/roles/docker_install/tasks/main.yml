@@ -48,30 +48,18 @@
     path: "{{ pydir }}" 
     state: directory
 
-- name: get PATH
-  shell: echo $PATH
-  register: path
-
-- name: get PYTHONPATH
-  shell: echo $PYTHONPATH
-  register: pythonpath
+- name: install docker-ps(python module) via proxy 
+  pip:
+    name: docker-ps
+    extra_args: "--prefix {{ pydir }}"
+    state: latest
+  when: use_proxy == "y"
+  environment:
+    http_proxy: "{{ proxy_server }}"
 
 - name: install docker-ps(python module)
   pip:
     name: docker-ps
     extra_args: "--prefix {{ pydir }}"
     state: latest
-  environment:
-    PYTHONPATH: "{{ pypath }}:{{ pythonpath.stdout }}"
-    PATH: "{{ pydir }}/bin:{{ path.stdout }}"
-
-- name: create a network with options
-  docker_network:
-    name: "{{ network_name }}"
-    ipam_options:
-      subnet: "{{ subnet }}"
-      gateway: "{{ gateway }}"
-      iprange: "{{ iprange }}"
-  environment:
-    PYTHONPATH: "{{ pypath }}:{{ pythonpath.stdout }}"
-    PATH: "{{ pydir }}/bin:{{ path.stdout }}"
+  when: use_proxy == "n"
