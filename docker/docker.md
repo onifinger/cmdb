@@ -5,10 +5,6 @@ CentOS Linux release 7.3.1611 をminimul インストール  
 
 ## yumの設定  
 ### 環境に応じてProxyを設定
-環境変数で設定
-```
-export http_proxy="http://proxy_user:proxy_password@proxy_ipaddress:proxy_port"
-```
 yum.confに設定
 ```
 proxy=http://proxy_ipaddress:proxy_port
