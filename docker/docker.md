@@ -41,6 +41,11 @@ docker単体であれば追加不要だが、今回、ansibleを使用するた�
 ```
 
 ## dockerセットアップ用Playbookのダウンロード
+ 環境に応じてProxyを設定
+```
+# git config --global http.proxy http://proxy_user:proxy_password@proxy_ipaddress:proxy_port
+```
+ダウンロード
 ```
 # cd /opt
 # git clone http://github.com/taka379sy/cmdb.git
