@@ -82,6 +82,7 @@ pkgs:
 ### ansbibleでOSの設定を行う。
 ```
 # ansible-playbook os.yml --connection=local -i hosts -l localhost
+# 
 ```
 ### 【参考】上記プレイブックでは、以下の処理を行っている。
 1. ansible用のユーザ追加(group作成、sudo、SSH公開鍵、環境変数の設定も行う。)
@@ -98,7 +99,11 @@ pkgs:
 # cd /opt/cmdb/docker
 ```
 ### proxyの設定
-dockerリポジトリサーバへのアクセスに、proxyの設定が必要な場合、以下のファイルの編集を行う。
+dockerリポジトリサーバへのアクセスに、proxyの設定が必要な場合、以下のファイルの編集を行う。  
+環境に応じてgitで使用するProxyを設定
+```
+# git config --global http.proxy http://proxy_user:proxy_password@proxy_ipaddress:proxy_port
+```
 ```
 # vi /opt/cmdb/docker/host_vars/localhost
 ```
