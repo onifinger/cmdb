@@ -67,7 +67,6 @@ users:
 アカウントの作成。同時に、sudo、SSH公開鍵、環境変数の設定も行われる。
 ```
 # ansible-playbook os.yml --connection=local -i hosts -l localhost
-# chown -R ansibleuser:ansibleuser /opt/cmdb/
 ```
 
 ## dockerのインストール
