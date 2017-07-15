@@ -9,3 +9,23 @@
     dest: "/etc/ansible/ansible.cfg"
     insertafter: "^#ssh_args"
     line: "ssh_args = -o ControlMaster=auto -o ControlPersist=60s -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+
+- name: set "log_path" to ansible.cfg
+  lineinfile:
+    dest: "/etc/ansible/ansible.cfg"
+    insertafter: "^#log_path"
+    line: "log_path = /var/log/ansible.log"
+
+- name: Change authority of ansible.log 
+  file:
+    path: /var/log/ansible.log
+    state: touch
+    mode: "0666"
+
+- name: Change authority of /opt/cmdb
+  file:
+    path: /opt/cmdb
+    group: ansibleuser
+    owner: ansibleuser
+    recurse: yes
+    state: directory

@@ -55,7 +55,7 @@
     state: latest
   when: use_proxy == "y"
   environment:
-    http_proxy: "{{ proxy_server }}"
+    https_proxy: "{{ proxy_server }}"
 
 - name: install docker-ps(python module)
   pip:

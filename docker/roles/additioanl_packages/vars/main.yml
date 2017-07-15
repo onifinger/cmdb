@@ -5,3 +5,4 @@ pkgs:
   - wget
   - tcpdump
   - sysstat
+  - bind-utils
