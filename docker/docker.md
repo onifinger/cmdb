@@ -41,33 +41,56 @@ docker単体であれば追加不要だが、今回、ansibleを使用するた�
 ```
 
 ## dockerセットアップ用Playbookのダウンロード
- 環境に応じてProxyを設定
+環境に応じてgitで使用するProxyを設定
 ```
 # git config --global http.proxy http://proxy_user:proxy_password@proxy_ipaddress:proxy_port
 ```
-ダウンロード
+プレイブックのダウンロード
 ```
 # cd /opt
 # git clone http://github.com/taka379sy/cmdb.git
 ```
 
-## アカウントの作成
+## OSの設定
 ```
 # cd /opt/cmdb/docker
 ```
-ansible実行用のユーザ編集
+### ansible実行用のユーザ編集
+パスワード、UIDの変更を行いたい場合は修正。
 ```
 # vi roles/useradd/vars/main.yml
 ```
-複数ユーザ作成したいときは、- {...}の行をコピーして変更。適宜、''で囲われている値を修正。
 ```
 users:
   - { name: 'ansibleuser', password: "{{ 'password'|password_hash('sha512')}}" , uid: '601' }
 ```
-アカウントの作成。同時に、sudo、SSH公開鍵、環境変数の設定も行われる。
+### 追加で使用したいパッケージ一覧の編集
+dockerとは別に、追加で使用したいパッケージがある場合は、以下のファイルを編集
+```
+# vi roles/additioanl_packages/vars/main.yml
+```
+```
+pkgs:
+  - bridge-utils
+  - net-tools
+  - telnet
+  - wget
+  - tcpdump
+  - sysstat
+  - bind-utils
+```
+### ansbibleでOSの設定を行う。
 ```
 # ansible-playbook os.yml --connection=local -i hosts -l localhost
 ```
+### 【参考】上記プレイブックでは、以下の処理を行っている。
+1. ansible用のユーザ追加(group作成、sudo、SSH公開鍵、環境変数の設定も行う。)
+2. この後pipで追加インストールする、Pythonモジュール用の環境設定。
+3. SELINUX　停止、無効  
+4. firewalld　停止、自動起動無効  
+5. iptables　インストール、自動起動有効、起動  
+6. ansibleの設定変更（bash、SSH接続、ログの設定、プレイブックの所有者の変更）
+7. 必須ではないが何かと使うツールのインストール  
 
 ## dockerのインストール
 以降の作業は、上記で作成したアカウント(ansibleuser)で実行する。
@@ -86,7 +109,12 @@ use_proxy: n
 
 # 認証ありの場合:http://user:password@host:port
 # 認証なしの場合:http://host:port
-proxy_server: 'http://user:password@host:port'
+#proxy_server: 'http://user:password@host:port'
+prsv: '192.168.1.1'
+prpt: '8080'
+prus: 'user'
+prpw: 'password'
+proxy_server: "http://{{ prus }}:{{ prpw }}@{{ prsv }}:{{ prpt }}"
 
 # プロキシサーバを利用しないプライベートレジストリありはy なしはn
 use_no_proxy: n
@@ -104,27 +132,10 @@ subnet: 192.168.10.0/24
 gateway: 192.168.10.1
 iprange: 192.168.10.64/26
 ```
-### 追加で使用したいパッケージ一覧の編集
-dockerとは別に、追加で使用したいパッケージがある場合は、以下のファイルを編集
-```
-# vi roles/additioanl_packages/vars/main.yml
-```
-```
-pkgs:
-  - bridge-utils
-  - net-tools
-  - telnet
-  - wget
-  - tcpdump
-  - sysstat
-```
 ### インストール
 ```
-# ansible-playbook docker.yml --connection=local -i hosts
+# ansible-playbook docker.yml --connection=local -i hosts -l localhost
 ```
 ## 【参考】上記プレイブックでは、以下の処理を行っている。
-1. SELINUX　停止、無効  
-2. firewalld　停止、自動起動無効  
-3. iptables　インストール、自動起動有効、起動  
-4. docker　docker本体と、ansibleのdockerモジュールに必要なモジュールのインストール(pip,docker-ps)、proxy設定、自動起動有効、再起動、独自ネットワークの作成  
-5. 必須ではないが何かと使うツールのインストール  
+1. docker本体と、ansibleのdockerモジュールに必要なモジュールのインストール(pip,docker-ps)、proxy設定、自動起動有効、再起動
+2. 独自ネットワークの作成  
