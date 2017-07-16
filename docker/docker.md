@@ -3,7 +3,7 @@
 ## OSセットアップ  
 CentOS Linux release 7.3.1611 をminimul インストール  
 
-## proxy(squid)の設定
+## proxy(squid)のインストール
 環境によってインターネット接続にProxyの有無が変わってくるが、
 それによって各種アプリ（yum,git,python(pip),docker等々）の設定を適宜変更するのは手間になる。  
 ホスト上にProxyをたてることで、各種アプリはホストのProxyを使用する固定の設定にし、
@@ -61,6 +61,12 @@ github.com
 .docker.io
 .cloudfront.net
 ```
+### Squidの起動
+```
+# systemctl start squid
+# systemctl enable squid
+```
+
 ## yumの設定  
 ### Proxyを設定
 ```
