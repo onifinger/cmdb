@@ -3,13 +3,71 @@
 ## OSセットアップ  
 CentOS Linux release 7.3.1611 をminimul インストール  
 
-## yumの設定  
-### 環境に応じてProxyを設定
-yum.confに設定
+## proxy(squid)の設定
+環境によってインターネット接続にProxyの有無が変わってくるが、
+それによって各種アプリ（yum,git,python(pip),docker等々）の設定を適宜変更するのは手間になる。  
+ホスト上にProxyをたてることで、各種アプリはホストのProxyを使用する固定の設定にし、
+ホストのProxyで上位Proxyに転送する設定のみ変更すれば良いようにする。
+
+### squidのインストール
+minimulではsquidはインストールできないので、通常のminimulでないメディアからインストールする。  
+インターネットに出れる場合は、yum install squidでよい。  
+メディアをセットして、以下のコマンドを実行する。
 ```
-proxy=http://proxy_ipaddress:proxy_port
-proxy_username=proxy_user
-proxy_password=proxy_password
+# mkdir /media/CentOS/
+# mount -r /dev/cdrom /media/CentOS/
+# yum --disablerepo=\* --enablerepo=c7-media install squid -y
+```
+
+### squidの設定編集
+```
+# vi /etc/squid/squid.conf
+```
+以下の設定を追記する。環境に合わせて適宜、削除、修正。  
+1. whitelistで許可されたドメイン以外を拒否
+2. 上位認証ありProxy 192.168.56.2。認証無しならlogin以降は削除
+3. ローカルIPは上位Proxyに転送しない。他はすべて上位Proxyに転送。
+4. ログフォーマットをApacheとフォーマットに合わせる。合わせたくなければ削除
+```
+<省略>
+# INSERT YOUR OWN RULE(S) HERE TO ALLOW ACCESS FROM YOUR CLIENTS
+# whitelist
+acl whitelist dstdomain "/etc/squid/whitelist"
+http_access deny !whitelist
+<省略>
+<行末>
+cache_peer 192.168.56.2 parent 3128 0 no-query default login=user:password
+always_direct allow localnet
+never_direct allow all
+prefer_direct off
+nonhierarchical_direct off
+icp_port 0
+
+logformat squid %>a %ui %un [%tl] "%rm %ru HTTP/%rv" %Hs %<st %Ss:%Sh [%>h] [%<h]
+emulate_httpd_log on
+```
+ホワイトリストの作成
+```
+vi /etc/squid/whitelist
+```
+適宜追記する。今回は以下の内容。
+1. github.com : githubに作成したAnsibleのPlaybook  
+2. python.org : Pythonのモジュール
+3. docker.io : dockerのイメージ
+4. cloudfront.net : dockerのイメージ
+```
+github.com
+.python.org
+.docker.io
+.cloudfront.net
+```
+## yumの設定  
+### Proxyを設定
+```
+# vi /etc/yum.confに設定
+```
+```
+proxy=http://127.0.0.1:3128
 ```
 ### 必要に応じてリポジトリサーバの設定変更  
 下記は近場のftp.riken.jpに変更する場合。  
@@ -43,7 +101,7 @@ docker単体であれば追加不要だが、今回、ansibleを使用するた�
 ## dockerセットアップ用Playbookのダウンロード
 環境に応じてgitで使用するProxyを設定
 ```
-# git config --global http.proxy http://proxy_user:proxy_password@proxy_ipaddress:proxy_port
+# git config --global http.proxy http://127.0.0.1:3128
 ```
 プレイブックのダウンロード
 ```
