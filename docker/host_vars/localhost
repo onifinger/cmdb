@@ -21,6 +21,7 @@ pydir: /opt/ansible_python
 pypath: "{{ pydir }}/lib/python2.7/site-packages"
 
 # 独自ネットワークの設定 ネットワーク名、サブネット、ゲートウェイ（ホストアドレス）、DHCP帯域
+# 2～63をイメージセットアップ用 192.168.10.64/26 -> 64～127を動的IPコンテナ用 128～254を固定IPコンテナ用
 network_name: bridge2
 subnet: 192.168.10.0/24
 gateway: 192.168.10.1

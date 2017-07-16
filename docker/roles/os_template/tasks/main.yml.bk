@@ -3,11 +3,6 @@
     name: "{{ item.base_os_name }}:{{ item.base_os_tag }}"
   with_items: "{{ images }}"
 
-#- name: docker tag
-#  shell: docker tag {{ item.base_os_name }}:{{ item.base_os_tag }} {{ image_name }}:latest
-#    name: "{{ item.base_os_name }}:{{ item.base_os_tag }}"
-#  with_items: "{{ images }}"
-
 - name: Start container, connect to network
   docker_container:
     name: "{{ item.image_name }}"

@@ -1,3 +1,3 @@
 images:
-  - { base_os_name: 'centos', base_os_tag: '7.3.1611', image_name: 'centos7', image_tag: '7.3.1611' }
-  - { base_os_name: 'centos', base_os_tag: '6.9', image_name: 'centos6', image_tag: '6.9' }
+  - { base_os_name: 'centos', base_os_tag: '7.3.1611', image_name: 'centos7', image_tag: '7.3.1611', ip: '192.168.10.2'}
+  - { base_os_name: 'centos', base_os_tag: '6.9', image_name: 'centos6', image_tag: '6.9', ip: '192.168.10.3' }
