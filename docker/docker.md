@@ -51,11 +51,13 @@ emulate_httpd_log on
 vi /etc/squid/whitelist
 ```
 適宜追記する。今回は以下の内容。
-1. github.com : githubに作成したAnsibleのPlaybook  
-2. python.org : Pythonのモジュール
-3. docker.io : dockerのイメージ
-4. cloudfront.net : dockerのイメージ
+1. .riken.jp : CentOSのリポジトリ
+2. github.com : githubに作成したAnsibleのPlaybook  
+3. python.org : Pythonのモジュール
+4. docker.io : dockerのイメージ
+5. cloudfront.net : dockerのイメージ
 ```
+.riken.jp
 github.com
 .python.org
 .docker.io
@@ -70,7 +72,7 @@ github.com
 ## yumの設定  
 ### Proxyを設定
 ```
-# vi /etc/yum.confに設定
+# vi /etc/yum.conf
 ```
 ```
 proxy=http://127.0.0.1:3128
