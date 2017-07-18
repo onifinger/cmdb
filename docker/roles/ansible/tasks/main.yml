@@ -22,10 +22,10 @@
     state: touch
     mode: "0666"
 
-- name: Change authority of /opt/cmdb
-  file:
-    path: /opt/cmdb
-    group: ansibleuser
-    owner: ansibleuser
-    recurse: yes
-    state: directory
+#- name: Change authority of /opt/cmdb
+#  file:
+#    path: /opt/cmdb
+#    group: ansibleuser
+#    owner: ansibleuser
+#    recurse: yes
+#    state: directory

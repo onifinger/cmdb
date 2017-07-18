@@ -7,5 +7,6 @@
     - firewalld
     - iptables
     - ansible
+    - unbound
     - additioanl_packages
 

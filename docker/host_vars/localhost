@@ -1,20 +1,6 @@
-# proxyを使うときはy 使わないときはn
-use_proxy: y
-
-# 認証ありの場合:http://user:password@host:port
-# 認証なしの場合:http://host:port
-#proxy_server: 'http://user:password@host:port'
-prsv: '192.168.56.2'
-prpt: '3128'
-prus: 'user'
-prpw: 'password'
-proxy_server: "http://{{ prus }}:{{ prpw }}@{{ prsv }}:{{ prpt }}"
-
-# プロキシサーバを利用しないプライベートレジストリありはy なしはn
-use_no_proxy: n
-
-# プロキシサーバを利用しないプライベートレジストリ
-no_proxy: 'no_proxy=local.example.com,192.168.1.1'
+# host IP
+host_ip: 172.23.141.63
+local_zone: ypro.jp
 
 # Pythonモジュールをインストールするディレクトリ
 pydir: /opt/ansible_python

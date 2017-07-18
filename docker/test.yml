@@ -1,0 +1,26 @@
+- hosts: localhost
+  become: yes
+  vars:
+    ip: xxx.xxx.xxx.xxx
+    local_server:
+      - '    zzz "{{ ip }}"'
+      - '    yyy "{{ ip }}"'
+  tasks:
+  - name: Setting environment variables to unbound
+    blockinfile:
+      dest: "/tmp/local.conf"
+      create: yes
+      marker: ""
+      block: |
+        {{ item }}
+    with_items:
+        "{{ local_server }}"
+
+#  - name: Setting environment variables to unbound
+#    lineinfile:
+#      dest: "/tmp/local.conf"
+#      create: yes
+#      line: "{{ item }}"
+#    with_items:
+#      - '    xxx "{{ ip }}"'
+#      - '    yyy "{{ ip }}"'
