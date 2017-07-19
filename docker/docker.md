@@ -117,48 +117,67 @@ docker単体であれば追加不要だが、今回、ansibleを使用するた�
 # git clone http://github.com/taka379sy/cmdb.git
 ```
 
-## OSの設定
+## OSと基本となるソフトの設定
 ```
 # cd /opt/cmdb/docker
-```
-### ansible実行用のユーザ編集
-パスワード、UIDの変更を行いたい場合は修正。
-```
-# vi roles/useradd/vars/main.yml
-```
-```
-users:
-  - { name: 'ansibleuser', password: "{{ 'password'|password_hash('sha512')}}" , uid: '601' }
-```
-
-### 追加で使用したいパッケージ一覧の編集
-```
 # vi host_vars/localhost
 ```
-ホストのIPアドレスを設定
 ```
-# host IP
+# ホストのIPアドレス
 host_ip: 172.23.141.63
+
+# ホストのインターフェイスカードの名前
+nic_interface: ens32
+
+# dockerで使用するIPアドレス帯域（デフォルトと、使いする独自ネットワーク）
+default_bridge: 172.17.0.0/16
+original_bridge: 192.168.10.0/24
+
+local_net:
+  - "{{ default_bridge }}"
+  - "{{ original_bridge }}"
+
+# 独自ネットワークの設定 ネットワーク名、サブネット、ゲートウェイ（ホストアドレス）、DHCP帯域
+# 2～63をイメージセットアップ用 192.168.10.64/26 -> 64～127を動的IPコンテナ用 128～254を固定IPコンテナ用
+network_name: bridge2
+subnet: "{{ original_bridge }}"
+gateway: 192.168.10.1
+iprange: 192.168.10.64/26
+
+# 内部で使用するドメイン名
 local_zone: ypro.jp
+
+# ローカルＤＮＳサーバ（unbound）で使用する、server設定
+local_server:
+  - '    interface: 0.0.0.0'
+  - '    access-control: 10.0.0.0/8 allow'
+  - '    access-control: 172.16.0.0/12 allow'
+  - '    access-control: 192.168.0.0/16 allow'
+  - '    access-control: 127.0.0.0/8 allow'
+  - '    do-ip6: no'
+  - '    local-zone: "{{ local_zone }}." static'
+  - '    local-data: "IN NS ns.{{ local_zone }}."'
+  - '    local-data: "IN MX 10 mail.{{ local_zone }}."'
+  - '    local-data: "cmdb.{{ local_zone }}. IN A {{ host_ip }}"'
+  - '    local-data-ptr: "{{ host_ip }} cmdb.{{ local_zone }}."'
+  - '    val-permissive-mode: yes'
+
+# ローカルＤＮＳサーバ（unbound）で使用する、外部ＤＮＳサーバの設定
+forward_zone:
+  - 'forward-zone:'
+  - '     name: "."'
+  - '     forward-addr: 172.23.1.18'
+  - '     forward-addr: 172.23.1.17'
 
 # Pythonモジュールをインストールするディレクトリ
 pydir: /opt/ansible_python
 pypath: "{{ pydir }}/lib/python2.7/site-packages"
 
-# 独自ネットワークの設定 ネットワーク名、サブネット、ゲートウェイ（ホストアドレス）、DHCP帯域
-# 2～63をイメージセットアップ用 192.168.10.64/26 -> 64～127を動的IPコンテナ用 128～254を固定IPコンテナ用
-network_name: bridge2
-subnet: 192.168.10.0/24
-gateway: 192.168.10.1
-iprange: 192.168.10.64/26
-```
+# ansibleユーザ
+users:
+  - { name: 'ansibleuser', password: "{{ 'password'|password_hash('sha512')}}" , uid: '601' }
 
-### 追加で使用したいパッケージ一覧の編集
-dockerとは別に、追加で使用したいパッケージがある場合は、以下のファイルを編集
-```
-# vi roles/additioanl_packages/vars/main.yml
-```
-```
+# 運用で役に立つパッケージの追加（ansible,gitは最初に手動でインストールするので除く）
 pkgs:
   - bridge-utils
   - net-tools
@@ -167,15 +186,19 @@ pkgs:
   - tcpdump
   - sysstat
   - bind-utils
+
+# dockerで外部から取得するベースになるＯＳイメージの情報と、内部でカスタマイズ後のイメージの情報。
+images:
+  - { base_os_name: 'centos', base_os_tag: '7.3.1611', image_name: 'centos7', image_tag: '7.3.1611', ip: '192.168.10.2'}
+  - { base_os_name: 'centos', base_os_tag: '6.9', image_name: 'centos6', image_tag: '6.9', ip: '192.168.10.3' }
 ```
-### ansbibleでOSの設定を行う。
+### ansbibleで設定を行う。
 ```
 # ansible-playbook os.yml --connection=local -i hosts -l localhost
-# 
 ```
 ### 【参考】上記プレイブックでは、以下の処理を行っている。
 1. ansible用のユーザ追加(group作成、sudo、SSH公開鍵、環境変数の設定も行う。)
-2. この後pipで追加インストールする、Pythonモジュール用の環境設定。
+2. Pythonモジュール用の環境設定。
 3. SELINUX　停止、無効  
 4. firewalld　停止、自動起動無効  
 5. iptables　インストール、自動起動有効、起動  
@@ -183,51 +206,9 @@ pkgs:
 7. 必須ではないが何かと使うツールのインストール  
 
 ## dockerのインストール
-以降の作業は、上記で作成したアカウント(ansibleuser)で実行する。
+前の項目でログイン時の環境変数を変更しているので、ログインをし直す。
 ```
 # cd /opt/cmdb/docker
-```
-### proxyの設定
-dockerリポジトリサーバへのアクセスに、proxyの設定が必要な場合、以下のファイルの編集を行う。  
-環境に応じてgitで使用するProxyを設定
-```
-# git config --global http.proxy http://proxy_user:proxy_password@proxy_ipaddress:proxy_port
-```
-```
-# vi /opt/cmdb/docker/host_vars/localhost
-```
-適宜、Proxyの設定等を行う。
-```
-# proxyを使うときはy 使わないときはn
-use_proxy: n
-
-# 認証ありの場合:http://user:password@host:port
-# 認証なしの場合:http://host:port
-#proxy_server: 'http://user:password@host:port'
-prsv: '192.168.1.1'
-prpt: '8080'
-prus: 'user'
-prpw: 'password'
-proxy_server: "http://{{ prus }}:{{ prpw }}@{{ prsv }}:{{ prpt }}"
-
-# プロキシサーバを利用しないプライベートレジストリありはy なしはn
-use_no_proxy: n
-
-# プロキシサーバを利用しないプライベートレジストリ
-no_proxy: 'no_proxy=local.example.com,192.168.1.1'
-
-# Pythonモジュールをインストールするディレクトリ
-pydir: /opt/ansible_python
-pypath: "{{ pydir }}/lib/python2.7/site-packages"
-
-# 独自ネットワークの設定 ネットワーク名、サブネット、ゲートウェイ（ホストアドレス）、DHCP帯域
-network_name: bridge2
-subnet: 192.168.10.0/24
-gateway: 192.168.10.1
-iprange: 192.168.10.64/26
-```
-### インストール
-```
 # ansible-playbook docker.yml --connection=local -i hosts -l localhost
 ```
 ## 【参考】上記プレイブックでは、以下の処理を行っている。
