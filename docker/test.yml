@@ -1,20 +1,24 @@
-- hosts: localhost
-  become: yes
+- hosts: all
+#- hosts: localhost
+  gather_facts: no
+  connection: docker
+  become: no
   vars:
     ip: xxx.xxx.xxx.xxx
     local_server:
       - '    zzz "{{ ip }}"'
       - '    yyy "{{ ip }}"'
   tasks:
-  - name: Setting environment variables to unbound
-    blockinfile:
-      dest: "/tmp/local.conf"
-      create: yes
-      marker: ""
-      block: |
-        {{ item }}
-    with_items:
-        "{{ local_server }}"
+   - command: ls
+#  - name: Setting environment variables to unbound
+#    blockinfile:
+#      dest: "/tmp/local.conf"
+#      create: yes
+#      marker: ""
+#      block: |
+#        {{ item }}
+#    with_items:
+#        "{{ local_server }}"
 
 #  - name: Setting environment variables to unbound
 #    lineinfile:

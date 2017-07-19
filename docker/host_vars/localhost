@@ -1,14 +1,71 @@
-# host IP
+# ホストのIPアドレス
 host_ip: 172.23.141.63
-local_zone: ypro.jp
 
-# Pythonモジュールをインストールするディレクトリ
-pydir: /opt/ansible_python
-pypath: "{{ pydir }}/lib/python2.7/site-packages"
+# ホストのインターフェイスカードの名前
+nic_interface: ens32
+
+# dockerで使用するIPアドレス帯域（デフォルトと、使いする独自ネットワーク）
+default_bridge: 172.17.0.0/16
+original_bridge: 192.168.10.0/24
+
+local_net:
+  - "{{ default_bridge }}"
+  - "{{ original_bridge }}"
 
 # 独自ネットワークの設定 ネットワーク名、サブネット、ゲートウェイ（ホストアドレス）、DHCP帯域
 # 2～63をイメージセットアップ用 192.168.10.64/26 -> 64～127を動的IPコンテナ用 128～254を固定IPコンテナ用
 network_name: bridge2
-subnet: 192.168.10.0/24
+subnet: "{{ original_bridge }}"
 gateway: 192.168.10.1
 iprange: 192.168.10.64/26
+
+# 内部で使用するドメイン名
+local_zone: ypro.jp
+
+# ローカルＤＮＳサーバ（unbound）で使用する、server設定
+local_server:
+  - '    interface: 0.0.0.0'
+  - '    access-control: 10.0.0.0/8 allow'
+  - '    access-control: 172.16.0.0/12 allow'
+  - '    access-control: 192.168.0.0/16 allow'
+  - '    access-control: 127.0.0.0/8 allow'
+  - '    do-ip6: no'
+  - '    local-zone: "{{ local_zone }}." static'
+  - '    local-data: "IN NS ns.{{ local_zone }}."'
+  - '    local-data: "IN MX 10 mail.{{ local_zone }}."'
+  - '    local-data: "ns.{{ local_zone }}. IN A {{ host_ip }}"'
+  - '    local-data: "mail.{{ local_zone }}. IN A {{ host_ip }}"'
+  - '    local-data: "proxy.{{ local_zone }}. IN A {{ host_ip }}"'
+  - '    local-data-ptr: "{{ host_ip }} ns.{{ local_zone }}."'
+  - '    val-permissive-mode: yes'
+
+# ローカルＤＮＳサーバ（unbound）で使用する、外部ＤＮＳサーバの設定
+forward_zone:
+  - 'forward-zone:'
+  - '     name: "."'
+  - '     forward-addr: 172.23.1.18'
+  - '     forward-addr: 172.23.1.17'
+ 
+# Pythonモジュールをインストールするディレクトリ
+pydir: /opt/ansible_python
+pypath: "{{ pydir }}/lib/python2.7/site-packages"
+
+# ansibleユーザ
+users:
+  - { name: 'ansibleuser', password: "{{ 'password'|password_hash('sha512')}}" , uid: '601' }
+
+# 運用で役に立つパッケージの追加（ansible,gitは最初に手動でインストールするので除く）
+pkgs:
+  - bridge-utils
+  - net-tools
+  - telnet
+  - wget
+  - tcpdump
+  - sysstat
+  - bind-utils
+
+# dockerで外部から取得するベースになるＯＳイメージの情報と、内部でカスタマイズ後のイメージの情報。
+images:
+  - { base_os_name: 'centos', base_os_tag: '7.3.1611', image_name: 'centos7', image_tag: '7.3.1611', ip: '192.168.10.2'}
+  - { base_os_name: 'centos', base_os_tag: '6.9', image_name: 'centos6', image_tag: '6.9', ip: '192.168.10.3' }
+

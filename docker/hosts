@@ -1,1 +1,2 @@
 localhost
+awesome_ramanujan ansible_connection=docker 

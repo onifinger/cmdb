@@ -5,3 +5,28 @@
       subnet: "{{ subnet }}"
       gateway: "{{ gateway }}"
       iprange: "{{ iprange }}"
+    driver_options:
+      com.docker.network.bridge.name: "{{ network_name }}"
+
+- name: allow access from container to host
+  iptables:
+    action: insert
+    chain: INPUT
+    jump: ACCEPT
+    source: "{{ item }}"
+  with_items:
+    "{{ local_net }}"
+
+- name: set rule to iptables
+  lineinfile:
+    dest: "/etc/sysconfig/iptables"
+    insertafter: "^:OUTPUT"
+    line: "-A INPUT -s {{ item }} -j ACCEPT"
+  with_items:
+    "{{ local_net }}"
+
+- name: restart docker
+  service:
+    name: docker
+    state: restarted
+    enabled: yes

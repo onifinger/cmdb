@@ -1,0 +1,19 @@
+# host IP
+host_ip: 172.23.141.63
+local_zone: ypro.jp
+
+# Pythonモジュールをインストールするディレクトリ
+pydir: /opt/ansible_python
+pypath: "{{ pydir }}/lib/python2.7/site-packages"
+
+# 独自ネットワークの設定 ネットワーク名、サブネット、ゲートウェイ（ホストアドレス）、DHCP帯域
+# 2～63をイメージセットアップ用 192.168.10.64/26 -> 64～127を動的IPコンテナ用 128～254を固定IPコンテナ用
+network_name: bridge2
+subnet: 192.168.10.0/24
+gateway: 192.168.10.1
+iprange: 192.168.10.64/26
+
+# dockerの内部ネットワーク
+local_net:
+  - "{{ subnet }}"
+  - 172.17.0.0/16
