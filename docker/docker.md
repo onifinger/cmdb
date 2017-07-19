@@ -130,6 +130,29 @@ docker単体であれば追加不要だが、今回、ansibleを使用するた�
 users:
   - { name: 'ansibleuser', password: "{{ 'password'|password_hash('sha512')}}" , uid: '601' }
 ```
+
+### 追加で使用したいパッケージ一覧の編集
+```
+# vi host_vars/localhost
+```
+ホストのIPアドレスを設定
+```
+# host IP
+host_ip: 172.23.141.63
+local_zone: ypro.jp
+
+# Pythonモジュールをインストールするディレクトリ
+pydir: /opt/ansible_python
+pypath: "{{ pydir }}/lib/python2.7/site-packages"
+
+# 独自ネットワークの設定 ネットワーク名、サブネット、ゲートウェイ（ホストアドレス）、DHCP帯域
+# 2～63をイメージセットアップ用 192.168.10.64/26 -> 64～127を動的IPコンテナ用 128～254を固定IPコンテナ用
+network_name: bridge2
+subnet: 192.168.10.0/24
+gateway: 192.168.10.1
+iprange: 192.168.10.64/26
+```
+
 ### 追加で使用したいパッケージ一覧の編集
 dockerとは別に、追加で使用したいパッケージがある場合は、以下のファイルを編集
 ```
