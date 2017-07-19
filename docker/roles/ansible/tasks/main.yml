@@ -1,8 +1,8 @@
-- name: set "executable" to ansible.cfg
-  lineinfile:
-    dest: "/etc/ansible/ansible.cfg"
-    insertafter: "^#executable"
-    line: "executable = /bin/bash -l"
+#- name: set "executable" to ansible.cfg
+#  lineinfile:
+#    dest: "/etc/ansible/ansible.cfg"
+#    insertafter: "^#executable"
+#    line: "executable = /bin/bash -l"
 
 - name: set "ssh_args" to ansible.cfg
   lineinfile:

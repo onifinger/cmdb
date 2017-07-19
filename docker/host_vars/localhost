@@ -33,10 +33,8 @@ local_server:
   - '    local-zone: "{{ local_zone }}." static'
   - '    local-data: "IN NS ns.{{ local_zone }}."'
   - '    local-data: "IN MX 10 mail.{{ local_zone }}."'
-  - '    local-data: "ns.{{ local_zone }}. IN A {{ host_ip }}"'
-  - '    local-data: "mail.{{ local_zone }}. IN A {{ host_ip }}"'
-  - '    local-data: "proxy.{{ local_zone }}. IN A {{ host_ip }}"'
-  - '    local-data-ptr: "{{ host_ip }} ns.{{ local_zone }}."'
+  - '    local-data: "cmdb.{{ local_zone }}. IN A {{ host_ip }}"'
+  - '    local-data-ptr: "{{ host_ip }} cmdb.{{ local_zone }}."'
   - '    val-permissive-mode: yes'
 
 # ローカルＤＮＳサーバ（unbound）で使用する、外部ＤＮＳサーバの設定
