@@ -4,6 +4,12 @@
 #    insertafter: "^#executable"
 #    line: "executable = /bin/bash -l"
 
+- name: set "sudo_flags" to ansible.cfg
+  lineinfile:
+    dest: "/etc/ansible/ansible.cfg"
+    insertafter: "^#sudo_flags"
+    line: "sudo_flags = -H -S -n -i"
+
 - name: set "ssh_args" to ansible.cfg
   lineinfile:
     dest: "/etc/ansible/ansible.cfg"
@@ -22,10 +28,10 @@
     state: touch
     mode: "0666"
 
-#- name: Change authority of /opt/cmdb
-#  file:
-#    path: /opt/cmdb
-#    group: ansibleuser
-#    owner: ansibleuser
-#    recurse: yes
-#    state: directory
+- name: Change authority of /opt/cmdb
+  file:
+    path: /opt/cmdb
+    group: ansibleuser
+    owner: ansibleuser
+    recurse: yes
+    state: directory

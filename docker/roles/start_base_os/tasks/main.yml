@@ -1,0 +1,12 @@
+- name: docker pull os_image
+  docker_image:
+    name: "{{ item.base_os_name }}:{{ item.base_os_tag }}"
+  with_items: "{{ images }}"
+
+- name: Create a os container
+  docker_container:
+    name: "{{ item.image_name }}"
+    image: "{{ item.base_os_name }}:{{ item.base_os_tag }}"
+    command: ["sleep", "infinity"]
+  with_items: "{{ images }}"
+

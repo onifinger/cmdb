@@ -1,0 +1,11 @@
+- hosts: localhost
+  connection: local
+  become: yes
+  roles:
+    - start_base_os
+
+- hosts: centos
+  connection: docker
+  gather_facts: no
+  roles:
+    - build_base_os

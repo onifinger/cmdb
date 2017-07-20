@@ -1,3 +1,9 @@
+# 内部で使用するドメイン名
+local_zone: ypro.local
+
+# ホスト名
+host_name: "cmdb.{{ local_zone }}"
+
 # ホストのIPアドレス
 host_ip: 172.23.141.63
 
@@ -19,9 +25,6 @@ subnet: "{{ original_bridge }}"
 gateway: 192.168.10.1
 iprange: 192.168.10.64/26
 
-# 内部で使用するドメイン名
-local_zone: ypro.jp
-
 # ローカルＤＮＳサーバ（unbound）で使用する、server設定
 local_server:
   - '    interface: 0.0.0.0'
@@ -31,13 +34,14 @@ local_server:
   - '    access-control: 127.0.0.0/8 allow'
   - '    do-ip6: no'
   - '    local-zone: "{{ local_zone }}." static'
-  - '    local-data: "IN NS ns.{{ local_zone }}."'
-  - '    local-data: "IN MX 10 mail.{{ local_zone }}."'
+  - '    local-data: "IN NS cmdb.{{ local_zone }}."'
+  - '    local-data: "IN MX 10 cmdb.{{ local_zone }}."'
   - '    local-data: "cmdb.{{ local_zone }}. IN A {{ host_ip }}"'
   - '    local-data-ptr: "{{ host_ip }} cmdb.{{ local_zone }}."'
   - '    val-permissive-mode: yes'
 
-# ローカルＤＮＳサーバ（unbound）で使用する、外部ＤＮＳサーバの設定
+# ローカルＤＮＳサーバ（unbound）で使用する、外部ＤＮＳサーバの設定。
+# 外部DNSサーバが無い場合は"forward_zone:"の定義ごとコメントアウト
 forward_zone:
   - 'forward-zone:'
   - '     name: "."'
@@ -66,4 +70,3 @@ pkgs:
 images:
   - { base_os_name: 'centos', base_os_tag: '7.3.1611', image_name: 'centos7', image_tag: '7.3.1611', ip: '192.168.10.2'}
   - { base_os_name: 'centos', base_os_tag: '6.9', image_name: 'centos6', image_tag: '6.9', ip: '192.168.10.3' }
-

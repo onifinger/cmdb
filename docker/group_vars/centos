@@ -1,0 +1,10 @@
+# リポジトリ情報（centos)
+repo_centos:
+  - { file: 'CentOS-Base',        name: 'base',             baseurl: 'http://ftp.riken.jp/Linux/centos/$releasever/os/$basearch/' }
+  - { file: 'CentOS-Base',        name: 'updates',          baseurl: 'http://ftp.riken.jp/Linux/centos/$releasever/updates/$basearch/' }
+  - { file: 'CentOS-Base',        name: 'extras',           baseurl: 'http://ftp.riken.jp/Linux/centos/$releasever/extras/$basearch/' }
+
+repo_centos_epel:
+  - { file: 'epel',               name: 'epel',             baseurl: 'http://ftp.riken.jp/Linux/fedora/epel/$releasever/$basearch' }
+  - { file: 'CentOS-SCLo-scl-rh', name: 'centos-sclo-rh',   baseurl: 'http://ftp.riken.jp/Linux/centos/$releasever/sclo/$basearch/rh/' }
+  - { file: 'CentOS-SCLo-scl',    name: 'centos-sclo-sclo', baseurl: 'http://ftp.riken.jp/Linux/centos/$releasever/sclo/$basearch/sclo/' }

@@ -1,0 +1,11 @@
+localhost
+centos6
+centos7
+
+[dockehost]
+localhost
+
+[centos]
+centos6
+centos7
+

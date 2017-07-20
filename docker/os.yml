@@ -1,6 +1,7 @@
 - hosts: localhost
   become: yes
   roles:
+    - hostname
     - useradd
     - profile
     - selinux

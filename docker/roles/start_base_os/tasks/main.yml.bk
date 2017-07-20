@@ -1,0 +1,42 @@
+- name: docker pull os_image
+  docker_image:
+    name: "{{ item.base_os_name }}:{{ item.base_os_tag }}"
+  with_items: "{{ images }}"
+
+- name: Start container, connect to network
+  docker_container:
+    name: "{{ item.image_name }}"
+    image: "{{ item.base_os_name }}:{{ item.base_os_tag }}"
+    networks:
+      - name: "{{ network_name }}"
+        ipv4_address: "{{ item.ip }}"
+    command: ["sleep", "infinity"]
+  with_items: "{{ images }}"
+
+- name: yum install openssh-server (via proxy)
+  shell: "docker exec {{ item.image_name }} /bin/bash -c 'export http_proxy={{ proxy_server }} && yum install openssh-server -y'"
+  with_items: "{{ images }}"
+  when: use_proxy == "y"
+
+- name: yum install openssh-server
+  shell: "docker exec {{ item.image_name }} yum install openssh-server -y"
+  with_items: "{{ images }}"
+  when: use_proxy == "n"
+
+- name: sshd-keygen (centos7)
+  shell: "docker exec {{ item.image_name }} /usr/sbin/sshd-keygen"
+  with_items: "{{ images }}"
+  when: item.image_name == "centos7"
+
+#- name: ssh-keygen (centos7)
+#  shell: "docker exec {{ item.image_name }} ssh-keygen"
+#  with_items: "{{ images }}"
+
+- name: mkdir .ssh
+  shell: "docker exec {{ item.image_name }} mkdir ~/.ssh"
+  with_items: "{{ images }}"
+
+- name: copy ssh-key
+  shell: "docker cp ~/.ssh/id_rsa.pub {{ item.image_name }}:/root/.ssh/"
+  with_items: "{{ images }}"
+

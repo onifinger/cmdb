@@ -1,15 +1,36 @@
 - hosts: all
 #- hosts: localhost
   gather_facts: no
-  connection: docker
-  become: no
+#  connection: docker
+  become: yes
   vars:
     ip: xxx.xxx.xxx.xxx
     local_server:
       - '    zzz "{{ ip }}"'
       - '    yyy "{{ ip }}"'
+    yyy:
+    zzz: 1
+    forward_zone:
+      - 'forward-zone:'
+      - '     name: "."'
+      - '     forward-addr: 172.23.1.18'
+      - '     forward-addr: 172.23.1.17'
   tasks:
-   - command: ls
+   - name: 1
+     command: ls
+     when: xxx is defined
+
+   - name: 1
+     command: ls
+     when: xxx is undefined
+
+   - name: 1
+     command: ls
+     when: forward_zone is defined
+
+#   - name: 1
+#     command: ls
+#     when: zzz == ''
 #  - name: Setting environment variables to unbound
 #    blockinfile:
 #      dest: "/tmp/local.conf"

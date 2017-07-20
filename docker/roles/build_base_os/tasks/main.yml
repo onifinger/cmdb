@@ -1,8 +1,53 @@
-- name: docker pull os_image
-  docker_image:
-    name: "{{ item.base_os_name }}:{{ item.base_os_tag }}"
-  with_items: "{{ images }}"
+#- name: yum repository
+#  yum_repository:
+#    name: "{{ item.name }}"
+#    baseurl: "{{ item.baseurl }}" 
+#    description: "{{ item.name }}"
+#    file: "{{ item.file }}"
+#  with_items: "{{ repo_centos }}"
 
+- name: yum.conf
+  lineinfile:
+    dest: "/etc/yum.conf"
+    line: "proxy=http://{{ host_ip }}:3128"
+
+- name: repository files
+  replace:
+    dest: "/etc/yum.repos.d/{{ item.file }}.repo"
+    regexp: "^mirrorlist"
+    replace: "#mirrorlist"
+  with_items: "{{ repo_centos }}"
+
+- name: repository baseurl
+  lineinfile:
+    dest: "/etc/yum.repos.d/{{ item.file }}.repo"
+    insertafter: "^[{{ item.name }}]"
+    insertbefore: "^#baseurl"
+    line: "baseurl={{ item.baseurl }}"
+  with_items: "{{ repo_centos }}"
+
+- name: yum install epel-release centos-release-scl
+  yum:
+    name: "{{ item }}"
+    state: latest
+  with_items:
+    - epel-release
+    - centos-release-scl
+
+- name: repository files
+  replace:
+    dest: "/etc/yum.repos.d/{{ item.file }}.repo"
+    regexp: "^mirrorlist"
+    replace: "#mirrorlist"
+  with_items: "{{ repo_centos_epel }}"
+
+- name: repository baseurl
+  lineinfile:
+    dest: "/etc/yum.repos.d/{{ item.file }}.repo"
+    insertafter: "^[{{ item.name }}]"
+    insertbefore: "^#baseurl"
+    line: "baseurl={{ item.baseurl }}"
+  with_items: "{{ repo_centos_epel }}"
 
 #- name: docker tag
 #  shell: docker tag {{ item.base_os_name }}:{{ item.base_os_tag }} {{ image_name }}:latest
