@@ -1,93 +1,50 @@
-#- name: yum repository
-#  yum_repository:
-#    name: "{{ item.name }}"
-#    baseurl: "{{ item.baseurl }}" 
-#    description: "{{ item.name }}"
-#    file: "{{ item.file }}"
-#  with_items: "{{ repo_centos }}"
-
-- name: yum.conf
-  lineinfile:
-    dest: "/etc/yum.conf"
-    line: "proxy=http://{{ host_ip }}:3128"
-
-- name: repository files
+- name: edit yum.repos.d(mirrorlist)
   replace:
-    dest: "/etc/yum.repos.d/{{ item.file }}.repo"
-    regexp: "^mirrorlist"
-    replace: "#mirrorlist"
-  with_items: "{{ repo_centos }}"
+    path: '/etc/yum.repos.d/CentOS-Base.repo'
+    regexp: '^(mirrorlist=http://mirrorlist.centos.org.*)$'
+    replace: '#\1'
 
-- name: repository baseurl
-  lineinfile:
-    dest: "/etc/yum.repos.d/{{ item.file }}.repo"
-    insertafter: "^[{{ item.name }}]"
-    insertbefore: "^#baseurl"
-    line: "baseurl={{ item.baseurl }}"
-  with_items: "{{ repo_centos }}"
+- name: edit yum.repos.d(Base)
+  replace:
+    path: '/etc/yum.repos.d/CentOS-Base.repo'
+    regexp: '^#(baseurl=http://)(mirror.centos.org)(.*)$'
+    replace: '\1ftp.riken.jp/Linux\3'
 
-- name: yum install epel-release centos-release-scl
+- name: Setting environment variables(proxy)
+  blockinfile:
+    dest: "/etc/profile.d/proxy.sh"
+    create: yes
+    block: |
+      http_proxy=http://{{ gateway }}:3128
+      export http_proxy
+      https_proxy=http://{{ gateway }}:3128
+      export https_proxy
+
+#- name: set proxy to yum
+#  lineinfile:
+#    path: /etc/yum.conf
+#    line: "proxy=http://{{ gateway }}:3128"
+
+- name: yum install centos-release-scl
   yum:
     name: "{{ item }}"
     state: latest
   with_items:
-    - epel-release
     - centos-release-scl
 
-- name: repository files
+- name: edit yum.repos.d(centos-sclo-rh)
   replace:
-    dest: "/etc/yum.repos.d/{{ item.file }}.repo"
-    regexp: "^mirrorlist"
-    replace: "#mirrorlist"
-  with_items: "{{ repo_centos_epel }}"
+    path: '/etc/yum.repos.d/CentOS-SCLo-scl-rh.repo'
+    regexp: '^(baseurl=http://)(mirror.centos.org)(.*)$'
+    replace: '\1ftp.riken.jp/Linux\3'
 
-- name: repository baseurl
-  lineinfile:
-    dest: "/etc/yum.repos.d/{{ item.file }}.repo"
-    insertafter: "^[{{ item.name }}]"
-    insertbefore: "^#baseurl"
-    line: "baseurl={{ item.baseurl }}"
-  with_items: "{{ repo_centos_epel }}"
+- name: edit yum.repos.d(centos-sclo)
+  replace:
+    path: '/etc/yum.repos.d/CentOS-SCLo-scl.repo'
+    regexp: '^(baseurl=http://)(mirror.centos.org)(.*)$'
+    replace: '\1ftp.riken.jp/Linux\3'
 
-#- name: docker tag
-#  shell: docker tag {{ item.base_os_name }}:{{ item.base_os_tag }} {{ image_name }}:latest
-#    name: "{{ item.base_os_name }}:{{ item.base_os_tag }}"
-#  with_items: "{{ images }}"
-
-#- name: Start container, connect to network
-#  docker_container:
-#    name: "{{ item.image_name }}"
-#    image: "{{ item.base_os_name }}:{{ item.base_os_tag }}"
-#    networks:
-#      - name: "{{ network_name }}"
-#        ipv4_address: "{{ item.ip }}"
-#    command: ["sleep", "infinity"]
-#  with_items: "{{ images }}"
-
-#- name: yum install openssh-server (via proxy)
-#  shell: "docker exec {{ item.image_name }} /bin/bash -c 'export http_proxy={{ proxy_server }} && yum install openssh-server -y'"
-#  with_items: "{{ images }}"
-#  when: use_proxy == "y"
-
-#- name: yum install openssh-server
-#  shell: "docker exec {{ item.image_name }} yum install openssh-server -y"
-#  with_items: "{{ images }}"
-#  when: use_proxy == "n"
-
-#- name: sshd-keygen (centos7)
-#  shell: "docker exec {{ item.image_name }} /usr/sbin/sshd-keygen"
-#  with_items: "{{ images }}"
-#  when: item.image_name == "centos7"
-
-#- name: ssh-keygen (centos7)
-#  shell: "docker exec {{ item.image_name }} ssh-keygen"
-#  with_items: "{{ images }}"
-
-#- name: mkdir .ssh
-#  shell: "docker exec {{ item.image_name }} mkdir ~/.ssh"
-#  with_items: "{{ images }}"
-
-#- name: copy ssh-key
-#  shell: "docker cp ~/.ssh/id_rsa.pub {{ item.image_name }}:/root/.ssh/"
-#  with_items: "{{ images }}"
-
+- name: yum update
+  yum:
+    name: "*"
+    state: latest

@@ -1,0 +1,7 @@
+- name: yum install yum-utils createrepo
+  yum:
+    name: "{{ item }}"
+    state: latest
+  with_items:
+    - yum-utils
+    - createrepo

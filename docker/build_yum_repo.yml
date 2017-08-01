@@ -1,0 +1,18 @@
+- hosts: localhost
+  connection: local
+  become: yes
+  roles:
+    - start_base_yum
+
+- hosts: centos
+  connection: docker
+  gather_facts: no
+  roles:
+    - build_base_yum
+
+- hosts: localhost
+  connection: local
+  become: yes
+  roles:
+    - build_base_yum_image
+    - httpd

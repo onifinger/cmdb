@@ -1,0 +1,7 @@
+- name: Create a os container
+  docker_container:
+    name: "{{ item.base_os_name }}"
+    image: "{{ item.base_os_name }}:{{ item.base_os_tag }}"
+    command: ["sleep", "infinity"]
+  with_items: "{{ yum_repo }}"
+

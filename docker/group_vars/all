@@ -27,7 +27,8 @@ iprange: 192.168.10.64/26
 
 # ローカルＤＮＳサーバ（unbound）で使用する、server設定
 local_server:
-  - '    interface: 0.0.0.0'
+  - '    interface: "{{ host_ip }}"'
+  - '    interface: "{{ gateway }}"'
   - '    access-control: 10.0.0.0/8 allow'
   - '    access-control: 172.16.0.0/12 allow'
   - '    access-control: 192.168.0.0/16 allow'
@@ -68,5 +69,10 @@ pkgs:
 
 # dockerで外部から取得するベースになるＯＳイメージの情報と、内部でカスタマイズ後のイメージの情報。
 images:
-  - { base_os_name: 'centos', base_os_tag: '7.3.1611', image_name: 'centos7', image_tag: '7.3.1611', ip: '192.168.10.2'}
-  - { base_os_name: 'centos', base_os_tag: '6.9', image_name: 'centos6', image_tag: '6.9', ip: '192.168.10.3' }
+  - { base_os_name: 'centos', base_os_tag: '7.3.1611', image_name: 'centos7', image_tag: '7.3.1611_v001', ip: '192.168.10.2'}
+  - { base_os_name: 'centos', base_os_tag: '6.9', image_name: 'centos6', image_tag: '6.9_v001', ip: '192.168.10.3' }
+
+# yumリポジトリサーバのイメージ作成に使用する、ベースのＯＳイメージの情報と、作成後のイメージの情報。
+yum_repo:
+  - { base_os_name: 'centos7', base_os_tag: '7.3.1611_v001', image_name: 'repocentos7', image_tag: 'v001', ip: '192.168.10.128', dir: '/var/www/html/centos/7/x86_64/' }
+  - { base_os_name: 'centos6', base_os_tag: '6.9_v001', image_name: 'repocentos6', image_tag: 'v001', ip: '192.168.10.129', dir: '/var/www/html/centos/6/x86_64/' }

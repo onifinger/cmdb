@@ -9,3 +9,9 @@
   gather_facts: no
   roles:
     - build_base_os
+
+- hosts: localhost
+  connection: local
+  become: yes
+  roles:
+    - build_base_os_image

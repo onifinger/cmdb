@@ -2,7 +2,7 @@ localhost
 centos6
 centos7
 
-[dockehost]
+[dockerhost]
 localhost
 
 [centos]
