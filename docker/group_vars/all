@@ -28,7 +28,6 @@ iprange: 192.168.10.64/26
 # ローカルＤＮＳサーバ（unbound）で使用する、server設定
 local_server:
   - '    interface: "{{ host_ip }}"'
-  - '    interface: "{{ gateway }}"'
   - '    access-control: 10.0.0.0/8 allow'
   - '    access-control: 172.16.0.0/12 allow'
   - '    access-control: 192.168.0.0/16 allow'
