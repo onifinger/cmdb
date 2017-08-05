@@ -5,6 +5,13 @@
     - "vars/config.yml"
 
   tasks:
+  - name: yum install additioanl packages
+    yum:
+      name: "{{ item }}"
+      state: latest
+    with_items:
+      - "{{ pkgs }}"
+
   - name: hostname
     hostname:
       name: "{{ host_name }}"
@@ -117,12 +124,4 @@
       name: NetworkManager
       state: restarted
       enabled: yes
-
-  - name: yum install additioanl packages
-    yum:
-      name: "{{ item }}"
-      state: latest
-    with_items:
-      - "{{ pkgs }}"
-
 
