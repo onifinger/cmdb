@@ -1,6 +1,0 @@
-- hosts: localhost
-  become: yes
-  roles:
-    - docker_install
-    - docker_network
-

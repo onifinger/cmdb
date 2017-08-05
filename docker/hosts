@@ -1,1 +1,11 @@
+localhost ansible_connection=local
+centos6 ansible_connection=docker
+centos7 ansible_connection=docker
+
+[dockerhost]
 localhost
+
+[centos]
+centos6
+centos7
+

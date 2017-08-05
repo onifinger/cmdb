@@ -1,0 +1,171 @@
+- hosts: dockerhost
+  become: yes
+
+  vars_files:
+    - "vars/config.yml"
+
+  tasks:
+  - name: hostname
+    hostname:
+      name: "{{ host_name }}"
+
+  - name: create group
+    group:
+      name: "{{ item.name }}"
+      gid: "{{ item.uid }}"
+    with_items: "{{ users }}"
+
+  - name: create user
+    user:
+      name: "{{ item.name }}"
+      password: "{{ item.password }}"
+      uid: "{{ item.uid }}"
+      group: "{{ item.name }}"
+      generate_ssh_key: yes
+    with_items: "{{ users }}"
+
+  - name: set sudo
+    lineinfile:
+      dest: "/etc/sudoers.d/{{ item.name }}"
+      line: "{{ item.name }} ALL=(ALL) NOPASSWD:ALL"
+      create: yes
+      owner: root
+      group: root
+      mode: 0440
+    with_items: "{{ users }}"
+
+  - name: Setting environment variables
+    blockinfile:
+      dest: "/home/{{ item.name }}/.bashrc"
+      insertafter: "^PATH=.*"
+      block: |
+        alias rm='rm -i'
+        alias cp='cp -i'
+        alias mv='mv -i'
+    with_items: "{{ users }}"
+
+  - name: Setting environment variables
+    blockinfile:
+      dest: "/etc/profile.d/ansible_python.sh"
+      create: yes
+      block: |
+        http_proxy=http://127.0.0.1:3128
+        export http_proxy
+        https_proxy=http://127.0.0.1:3128
+        export https_proxy
+        PATH={{ pydir }}/bin:$PATH
+        PYTHONPATH={{ pypath }}:$PYTHONPATH
+        export PYTHONPATH
+
+  - name: disabled selinux
+    selinux: state=disabled
+
+  - name: stop/disabled firewalld
+    service:
+      name: firewalld
+      state: stopped
+      enabled: no
+
+  - name: yum install iptables
+    yum:
+      name: iptables-services
+      state: latest
+
+  - name: start iptables
+    service:
+      name: iptables
+      state: started
+      enabled: yes
+
+  - name: set "sudo_flags" to ansible.cfg
+    lineinfile:
+      dest: "/etc/ansible/ansible.cfg"
+      insertafter: "^#sudo_flags"
+      line: "sudo_flags = -H -S -n -i"
+
+  - name: set "ssh_args" to ansible.cfg
+    lineinfile:
+      dest: "/etc/ansible/ansible.cfg"
+      insertafter: "^#ssh_args"
+      line: "ssh_args = -o ControlMaster=auto -o ControlPersist=60s -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+
+  - name: set "log_path" to ansible.cfg
+    lineinfile:
+      dest: "/etc/ansible/ansible.cfg"
+      insertafter: "^#log_path"
+      line: "log_path = /var/log/ansible.log"
+
+  - name: Change authority of ansible.log
+    file:
+      path: /var/log/ansible.log
+      state: touch
+      mode: "0666"
+
+  - name: Change authority of /opt/cmdb
+    file:
+      path: /opt/cmdb
+      group: ansibleuser
+      owner: ansibleuser
+      recurse: yes
+      state: directory
+
+  - name: yum install unbound
+    yum:
+      name: "{{ item }}"
+      state: latest
+    with_items:
+      - unbound
+      - NetworkManager-glib
+
+  - name: initialize local-zone,forward-zone to unbound
+    file:
+      path: "{{ item }}"
+      state: absent
+    with_items:
+      - /etc/unbound/local.d/local-zone.conf
+      - /etc/unbound/conf.d/forward-zone.conf
+
+  - name: Setting environment variables to unbound(local-zone)
+    lineinfile:
+      dest: "/etc/unbound/local.d/local-zone.conf"
+      create: yes
+      line: "{{ item }}"
+    with_items:
+        "{{ local_server }}"
+
+  - name: Setting environment variables to unbound(forward-zone)
+    lineinfile:
+      dest: "/etc/unbound/conf.d/forward-zone.conf"
+      create: yes
+      line: "{{ item }}"
+    with_items:
+        "{{ forward_zone }}"
+    when: forward_zone is defined
+
+  - name: restart unbound
+    service:
+      name: unbound
+      state: restarted
+      enabled: yes
+
+  - name: Setting DNS Server to resolve.conf
+    nmcli:
+      conn_name: "{{ nic_interface }}"
+      type: ethernet
+      dns4: "{{ host_ip }}"
+      state: present
+
+  - name: restart NetworkManager
+    service:
+      name: NetworkManager
+      state: restarted
+      enabled: yes
+
+  - name: yum install additioanl packages
+    yum:
+      name: "{{ item }}"
+      state: latest
+    with_items:
+      - "{{ pkgs }}"
+
+

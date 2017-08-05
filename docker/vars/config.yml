@@ -5,10 +5,15 @@ local_zone: ypro.local
 host_name: "cmdb.{{ local_zone }}"
 
 # ホストのIPアドレス
-host_ip: 172.23.141.63
+#host_ip: 172.23.141.63
+host_ip: 192.168.56.4
 
 # ホストのインターフェイスカードの名前
-nic_interface: ens32
+#nic_interface: ens32
+nic_interface: enp0s3
+
+# localのProxy
+local_proxy: "{{ host_ip }}:3128"
 
 # dockerで使用するIPアドレス帯域（デフォルトと、使いする独自ネットワーク）
 default_bridge: 172.17.0.0/16
@@ -45,8 +50,9 @@ local_server:
 forward_zone:
   - 'forward-zone:'
   - '     name: "."'
-  - '     forward-addr: 172.23.1.18'
-  - '     forward-addr: 172.23.1.17'
+  - '     forward-addr: 192.168.56.2'
+#  - '     forward-addr: 172.23.1.18'
+#  - '     forward-addr: 172.23.1.17'
  
 # Pythonモジュールをインストールするディレクトリ
 pydir: /opt/ansible_python

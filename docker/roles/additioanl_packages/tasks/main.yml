@@ -1,6 +1,0 @@
-- name: yum install additioanl packages
-  yum:
-    name: "{{ item }}"
-    state: latest
-  with_items:
-    - "{{ pkgs }}"

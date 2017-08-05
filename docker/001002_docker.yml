@@ -1,0 +1,81 @@
+- hosts: dockerhost
+  become: yes
+
+  vars_files:
+    - "vars/config.yml"
+  
+  tasks:
+
+  - name: yum install docker
+    yum:
+      name: "{{ item }}"
+      state: latest
+    with_items:
+      - docker
+      - python2-pip
+
+  - name: set proxy to docker
+    lineinfile:
+      path: /lib/systemd/system/docker.service
+      insertbefore: ".*ExecStart.*"
+      line: "Environment=\"http_proxy=http://127.0.0.1:3128\""
+
+  - name: systemd demon reload
+    shell: systemctl daemon-reload
+
+  - name: restart docker
+    service:
+      name: docker
+      state: restarted
+      enabled: yes
+
+  - name: create directory for python modules
+    file:
+      path: "{{ pydir }}"
+      state: directory
+
+  - name: install docker-ps(python module)
+    pip:
+      name: docker-ps
+      extra_args: "--prefix {{ pydir }}"
+      state: latest
+
+  - name: install docker-py(python module)
+    pip:
+      name: docker-py
+      extra_args: "--prefix {{ pydir }}"
+      state: latest
+
+  - name: create a network with options
+    docker_network:
+      name: "{{ network_name }}"
+      ipam_options:
+        subnet: "{{ subnet }}"
+        gateway: "{{ gateway }}"
+        iprange: "{{ iprange }}"
+      driver_options:
+        com.docker.network.bridge.name: "{{ network_name }}"
+
+  - name: allow access from container to host
+    iptables:
+      action: insert
+      chain: INPUT
+      jump: ACCEPT
+      source: "{{ item }}"
+    with_items:
+      "{{ local_net }}"
+
+  - name: set rule to iptables
+    lineinfile:
+      dest: "/etc/sysconfig/iptables"
+      insertafter: "^:OUTPUT"
+      line: "-A INPUT -s {{ item }} -j ACCEPT"
+    with_items:
+      "{{ local_net }}"
+
+  - name: restart docker
+    service:
+      name: docker
+      state: restarted
+      enabled: yes
+
