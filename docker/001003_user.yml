@@ -1,0 +1,43 @@
+- hosts: dockerhost
+  become: yes
+
+  vars_files:
+    - "vars/config.yml"
+
+  tasks:
+  - name: create group
+    group:
+      name: "{{ item.name }}"
+      gid: "{{ item.uid }}"
+    with_items: "{{ users }}"
+
+  - name: create user
+    user:
+      name: "{{ item.name }}"
+      password: "{{ item.password }}"
+      uid: "{{ item.uid }}"
+      group: "{{ item.name }}"
+      groups: "root"
+      generate_ssh_key: yes
+    with_items: "{{ users }}"
+
+  - name: set sudo
+    lineinfile:
+      dest: "/etc/sudoers.d/{{ item.name }}"
+      line: "{{ item.name }} ALL=(ALL) NOPASSWD:ALL"
+      create: yes
+      owner: root
+      group: root
+      mode: 0440
+    with_items: "{{ users }}"
+
+  - name: Setting environment variables
+    blockinfile:
+      dest: "/home/{{ item.name }}/.bashrc"
+      insertafter: "^PATH=.*"
+      block: |
+        alias rm='rm -i'
+        alias cp='cp -i'
+        alias mv='mv -i'
+    with_items: "{{ users }}"
+

@@ -34,11 +34,11 @@
       path: "{{ pydir }}"
       state: directory
 
-  - name: install docker-ps(python module)
-    pip:
-      name: docker-ps
-      extra_args: "--prefix {{ pydir }}"
-      state: latest
+#  - name: install docker-ps(python module)
+#    pip:
+#      name: docker-ps
+#      extra_args: "--prefix {{ pydir }}"
+#      state: latest
 
   - name: install docker-py(python module)
     pip:
