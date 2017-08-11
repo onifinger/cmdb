@@ -1,0 +1,33 @@
+- hosts: dockerhost
+  become: yes
+
+  vars_files:
+    - "vars/config.yml"
+
+  tasks:
+
+  - name: yum install httpd
+    yum:
+      name: httpd
+      state: latest
+
+  - name: start httpd
+    service:
+      name: httpd
+      state: restarted
+      enabled: yes
+
+  - name: allow access from container to host
+    iptables:
+      action: insert
+      chain: INPUT
+      protocol: tcp
+      destination_port: 80
+      jump: ACCEPT
+
+  - name: set rule to iptables
+    lineinfile:
+      dest: "/etc/sysconfig/iptables"
+      insertafter: "^:OUTPUT"
+      line: "-A INPUT -p tcp -m tcp --dport 80 -j ACCEPT"
+

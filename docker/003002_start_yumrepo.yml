@@ -1,0 +1,23 @@
+- hosts: dockerhost
+  become: yes
+
+  vars_files:
+    - "vars/config.yml"
+
+  tasks:
+
+  - name: Create a yum container
+    docker_container:
+      name: "{{ item.image_name }}"
+      image: "{{ item.image_name }}:{{ item.image_tag }}"
+      hostname: "{{ item.image_name }}"
+      networks:
+        - name: "{{ network_name }}"
+          ipv4_address: "{{ item.ip }}"
+      volumes:
+        - "/opt/dockerpv/{{ item.image_name }}/var/log:/var/log"
+        - "/opt/dockerpv/{{ item.image_name }}/var/cache/yum:/var/cache/yum"
+        - "/etc/localtime:/etc/localtime:ro"
+        - "{{ item.dir }}:{{ item.dir }}"
+      command: ["sleep", "infinity"]
+    with_items: "{{ yum_repo }}"

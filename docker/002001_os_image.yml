@@ -15,6 +15,10 @@
       name: "{{ item.image_name }}"
       image: "{{ item.base_os_name }}:{{ item.base_os_tag }}"
       command: ["sleep", "infinity"]
+      networks:
+        - name: "{{ network_name }}"
+          ipv4_address: "{{ item.ip }}"
+      purge_networks: yes
     with_items: "{{ images }}"
 
 - hosts: centos
@@ -26,32 +30,32 @@
     - "vars/config.yml"
 
   tasks:
-  - name: edit yum.repos.d(mirrorlist)
+  - name: edit yum.repos.d(base mirrorlist)
     replace:
       path: '/etc/yum.repos.d/CentOS-Base.repo'
       regexp: '^(mirrorlist=http://mirrorlist.centos.org.*)$'
       replace: '#\1'
 
-  - name: edit yum.repos.d(Base)
+  - name: edit yum.repos.d(base baseurl)
     replace:
       path: '/etc/yum.repos.d/CentOS-Base.repo'
       regexp: '^#(baseurl=http://)(mirror.centos.org)(.*)$'
       replace: '\1ftp.riken.jp/Linux\3'
 
-  #- name: Setting environment variables(proxy)
-  #  blockinfile:
-  #    dest: "/etc/profile.d/proxy.sh"
-  #    create: yes
-  #    block: |
-  #      http_proxy=http://{{ gateway }}:3128
-  #      export http_proxy
-  #      https_proxy=http://{{ gateway }}:3128
-  #      export https_proxy
+#  - name: Setting environment variables(proxy)
+#    blockinfile:
+#      dest: "/etc/profile.d/proxy.sh"
+#      create: yes
+#      block: |
+#        http_proxy=http://{{ gateway }}:3128
+#        export http_proxy
+#        https_proxy=http://{{ gateway }}:3128
+#        export https_proxy
 
-  #- name: set proxy to yum
-  #  lineinfile:
-  #    path: /etc/yum.conf
-  #    line: "proxy=http://{{ gateway }}:3128"
+#  - name: set proxy to yum
+#    lineinfile:
+#      path: /etc/yum.conf
+#      line: "proxy=http://{{ gateway }}:3128"
 
   - name: yum install centos-release-scl
     yum:
@@ -74,6 +78,28 @@
       path: '/etc/yum.repos.d/CentOS-SCLo-scl.repo'
       regexp: '^(baseurl=http://)(mirror.centos.org)(.*)$'
       replace: '\1ftp.riken.jp/Linux\3'
+
+  - name: yum install epel-release
+    yum:
+      name: "{{ item }}"
+      state: latest
+    with_items:
+      - epel-release
+    environment:
+      https_proxy: "http://{{ local_proxy }}"
+      http_proxy: "http://{{ local_proxy }}"
+
+  - name: edit yum.repos.d(epel mirrorlist)
+    replace:
+      path: '/etc/yum.repos.d/epel.repo'
+      regexp: '^(mirrorlist=https://mirrors.fedoraproject.org.*)$'
+      replace: '#\1'
+
+  - name: edit yum.repos.d(epel baseurl)
+    replace:
+      path: '/etc/yum.repos.d/epel.repo'
+      regexp: '^#(baseurl=http://)(download.fedoraproject.org/pub/)(.*)$'
+      replace: '\1ftp.riken.jp/Linux/fedora/\3'
 
   - name: yum update
     yum:

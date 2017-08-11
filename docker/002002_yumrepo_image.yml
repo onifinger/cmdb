@@ -1,0 +1,69 @@
+- hosts: dockerhost
+  become: yes
+
+  vars_files:
+    - "vars/config.yml"
+
+  tasks:
+
+  - name: Create a os container
+    docker_container:
+      name: "{{ item.image_name }}"
+      image: "{{ item.image_name }}:{{ item.image_tag }}"
+      command: ["sleep", "infinity"]
+      networks:
+        - name: "{{ network_name }}"
+          ipv4_address: "{{ item.ip }}"
+      purge_networks: yes
+    with_items: "{{ images }}"
+
+- hosts: centos
+#  become: yes
+  connection: docker
+  gather_facts: no
+
+  vars_files:
+    - "vars/config.yml"
+
+  tasks:
+  - name: yum install yum-utils createrepo
+    yum:
+      name: "{{ item }}"
+      state: latest
+    with_items:
+      - yum-utils
+      - createrepo
+    environment:
+      https_proxy: "http://{{ local_proxy }}"
+      http_proxy: "http://{{ local_proxy }}"
+
+- hosts: dockerhost
+  become: yes
+
+  vars_files:
+    - "vars/config.yml"
+
+  tasks:
+
+  - name: Stop base_os container
+    docker_container:
+      name: "{{ item.base_os_name }}"
+      state: stopped
+    with_items: "{{ yum_repo }}"
+
+  - name: absent base_os image
+    docker_image:
+      name: "{{ item.image_name }}:{{ item.image_tag }}"
+      state: absent
+    with_items: "{{ yum_repo }}"
+
+  - name: docker commit
+    shell: docker commit "{{ item.base_os_name }}" "{{ item.image_name }}:{{ item.image_tag }}"
+    with_items: "{{ yum_repo }}"
+
+  - name: absent base_os container
+    docker_container:
+      name: "{{ item.base_os_name }}"
+      state: absent
+    with_items: "{{ yum_repo }}"
+
