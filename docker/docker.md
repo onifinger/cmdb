@@ -261,7 +261,6 @@ superset:
 ```
 # cd /opt/cmdb/docker
 # ansible-playbook 001002_docker.yml -i hosts -l localhost -vvv
-# ansible-playbook 001003_user.yml -i hosts -l localhost -vvv
 ```
 ## 【参考】上記プレイブックでは、以下の処理を行っている。
 1. docker本体と、ansibleのdockerモジュールに必要なモジュールのインストール(pip,docker-ps)、proxy設定、自動起動有効、再起動
