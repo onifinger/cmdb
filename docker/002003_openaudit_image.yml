@@ -1,0 +1,332 @@
+- hosts: dockerhost
+  become: yes
+
+  vars_files:
+    - "vars/config.yml"
+
+  tasks:
+
+  - name: Create a os container
+    docker_container:
+      name: "{{ item.image_name }}"
+      image: "{{ item.image_name }}:{{ item.image_tag }}"
+      command: ["sleep", "infinity"]
+      networks:
+        - name: "{{ network_name }}"
+          ipv4_address: "{{ item.ip }}"
+      purge_networks: yes
+    with_items: "{{ images }}"
+#    when: item.image_name == 'centos6'
+
+- hosts: centos
+#  become: yes
+#  connection: docker
+  gather_facts: no
+
+  vars_files:
+    - "vars/config.yml"
+
+  tasks:
+  - name: yum install
+    yum:
+      name: "{{ item }}"
+      state: latest
+    with_items:
+      - httpd
+      - php
+      - php-cli
+      - php-mysql
+      - php-ldap
+      - php-mbstring
+      - php-mcrypt
+      - php-process
+      - php-snmp
+      - php-xml
+      - nmap
+      - zip
+      - wget
+      - sshpass
+      - screen
+      - samba-client
+      - perl-Time-modules
+      - ipmitool
+      - perl-core
+      - mysql
+      - mysql-server
+      - logrotate
+      - python-pip
+      - MySQL-python 
+    environment:
+      https_proxy: "http://{{ local_proxy }}"
+      http_proxy: "http://{{ local_proxy }}"
+    when: inventory_hostname == 'centos6'
+
+  - name: yum install
+    yum:
+      name: "{{ item }}"
+      state: latest
+    with_items:
+      - httpd
+      - php
+      - php-cli
+      - php-mysql
+      - php-ldap
+      - php-mbstring
+      - php-mcrypt
+      - php-process
+      - php-snmp
+      - php-xml
+      - nmap
+      - zip
+      - wget
+      - sshpass
+      - screen
+      - samba-client
+      - perl-Time-modules
+      - ipmitool
+      - perl-core
+      - mariadb-server
+      - mariadb
+      - logrotate
+      - python-pip
+      - MySQL-python
+      - perl-Time-modules
+    environment:
+      https_proxy: "http://{{ local_proxy }}"
+      http_proxy: "http://{{ local_proxy }}"
+    when: inventory_hostname == 'centos7'
+
+  - name: pip install pexpect
+    pip:
+      name: "{{ item }}"
+      state: latest
+    with_items:
+      - pexpect
+    environment:
+      https_proxy: "http://{{ local_proxy }}"
+      http_proxy: "http://{{ local_proxy }}"
+
+#  - name: Copies files to remote locations
+#    copy:
+#      src: "{{ item.src }}"
+#      dest: "{{ item.dest }}"
+#      mode: u=rwx,g=r,o=r
+#    with_items:
+#      - { src: "files/openaudit/{{ openaudit_install_file }}", dest: "/root/{{ openaudit_install_file }}" }
+
+  - name: Copies files to remote locations
+    copy:
+      src: "{{ item.src }}"
+      dest: "{{ item.dest }}"
+      mode: u=rwx,g=r,o=r
+    with_items:
+      - { src: "files/openaudit/openaudit_6.sh", dest: "/usr/local/bin/openaudit.sh" }
+    when: inventory_hostname == 'centos6'
+
+  - name: Copies files to remote locations
+    copy:
+      src: "{{ item.src }}"
+      dest: "{{ item.dest }}"
+      mode: u=rwx,g=r,o=r
+    with_items:
+      - { src: "files/openaudit/openaudit_7.sh", dest: "/usr/local/bin/openaudit.sh" }
+    when: inventory_hostname == 'centos7'
+
+  - name: start mysqld
+    service:
+      name: mysqld
+      state: started
+    when: inventory_hostname == 'centos6'
+
+  - name: init mysql
+    shell: /usr/bin/mysql_install_db
+    when: inventory_hostname == 'centos7'
+
+  - name: init mysql
+    shell: chown mysql:mysql /var/lib/mysql -R
+    when: inventory_hostname == 'centos7'
+
+  - name: start mysqld
+    shell: /usr/bin/mysqld_safe --datadir='/var/lib/mysql' &
+    when: inventory_hostname == 'centos7'
+
+  - name: mysql user
+    shell: echo "grant select on openaudit.* to 'openauditview'@'%' identified by '{{ openaudit_mysql_pass }}' with grant option" | mysql 
+ 
+  - mysql_user:
+      name: root
+      password: "{{ openaudit_mysql_pass }}"
+    ignore_errors: True 
+
+#  - name: edit /etc/my.cnf
+#    lineinfile:
+#      path: /etc/my.cnf
+#      line: "{{ item }}"
+#    with_items:
+#      - "[client]"
+#      - "default-character-set=utf8"
+
+#  - name: edit /etc/my.cnf
+#    replace:
+#      path: /etc/my.cnf
+#      regexp: "({{ item }})"
+#      replace: '\1\ndefault-character-set=utf8'
+#    with_items:
+#      - '\[mysqld\]'
+#      - '\[mysqld_safe\]'
+
+#  - name: restart mysqld
+#    service:
+#      name: mysqld
+#      state: restarted
+#    when: inventory_hostname == 'centos6'
+
+#  - name: stop mysqld
+#    shell: /bin/kill -TERM `cat /var/run/mariadb/mariadb.pid`
+#    when: inventory_hostname == 'centos7'
+
+#  - name: start mysqld
+#    shell: /usr/bin/mysqld_safe --datadir='/var/lib/mysql' &
+#    when: inventory_hostname == 'centos7'
+
+  - name: edit php.ini(comment out)
+    replace:
+      path: '/etc/php.ini'
+      regexp: "^{{ item }}"
+      replace: ";{{ item }}"
+    with_items:
+      - 'memory_limit'
+      - 'max_execution_time'
+      - 'max_input_time'
+      - 'error_reporting'
+      - 'display_errors'
+      - 'upload_max_filesize'
+      - 'date.timezone'
+
+  - name: edit php.ini
+    lineinfile:
+      path: '/etc/php.ini'
+      line: "{{ item.value }}"
+      insertafter: "^;{{ item.name }}"
+    with_items:
+      - { name: 'memory_limit'       , value: 'memory_limit = 512M'        }
+      - { name: 'max_execution_time' , value: 'max_execution_time = 300'   }
+      - { name: 'max_input_time'     , value: 'max_input_time = 600'       }
+      - { name: 'error_reporting'    , value: 'error_reporting = E_ALL'    }
+      - { name: 'display_errors'     , value: 'display_errors = On'        }
+      - { name: 'upload_max_filesize', value: 'upload_max_filesize = 10M'  }
+      - { name: 'date.timezone'      , value: 'date.timezone = Asia/Tokyo' }
+
+  - name: download openaudit_install_file
+    get_url:
+      url: http://dl-openaudit.opmantek.com/{{ openaudit_install_file }}
+      dest: /root/{{ openaudit_install_file }}
+    environment:
+      https_proxy: "http://{{ local_proxy }}"
+      http_proxy: "http://{{ local_proxy }}"
+
+  - name: chmod +x openaudit_install_file
+    file:
+      path: "/root/{{ openaudit_install_file }}"
+      mode: "a+x"
+      state: file
+
+  - name: openaudit install
+    expect:
+      command: "/root/{{ openaudit_install_file }}"
+      responses:
+        "Type 'y' or hit <Enter> to accept, any other key for 'no': ": "y"
+        "Hit <Enter> when ready to continue: ": ""
+        "Enter the MySQL root user's password: ": "{{ openaudit_mysql_pass }}"
+      timeout: 600
+    environment:
+      https_proxy: "http://{{ local_proxy }}"
+      http_proxy: "http://{{ local_proxy }}"    
+
+  - name: edit database.php
+    replace:
+      path: "/usr/local/open-audit/code_igniter/application/config/database.php"
+      regexp: "localhost"
+      replace: "127.0.0.1"
+
+  - name: copy audit scripts
+    shell: cp -pr /usr/local/open-audit/other /var/www/html/
+
+  - name: file list (/var/www/html/other/*.sh)
+    shell: 'find /var/www/html/other/ -maxdepth 1 -type f -name "*.sh"'
+    register: filelist
+    changed_when: false
+
+  - name: edit /var/www/html/other/*.sh
+    replace:
+      path: "{{ item }}"
+      regexp: "http://localhost"
+      replace: "http://{{ host_ip }}:{{ openaudit_port }}"
+    with_items: "{{ filelist.stdout_lines }}"
+
+  - name: edit /var/www/html/other/*.sh
+    replace:
+      path: "{{ item }}"
+      regexp: 'submit_online="n"'
+      replace: 'submit_online="y"'
+    with_items: "{{ filelist.stdout_lines }}"
+
+  - name: edit /var/www/html/other/*.sh
+    replace:
+      path: "{{ item }}"
+      regexp: 'create_file="y"'
+      replace: 'create_file="n"'
+    with_items: "{{ filelist.stdout_lines }}"
+
+#  - name: file list (/var/www/html/other/*.sh)
+#    shell: 'find /var/www/html/other/ -maxdepth 1 -type f -name "*.vbs"'
+#    register: filelist
+#    changed_when: false
+
+# Part of VBS is other than UTF 8.
+# 'replace' corresponds only to UTF 8 character code.
+# Replace with sed.
+  - name: edit /var/www/html/other/*.vbs
+    shell: sed -i -e 's/http\:\/\/localhost/http\:\/\/{{ host_ip }}:8000/g' /var/www/html/other/*.vbs
+#    replace:
+#      path: "{{ item }}"
+#      regexp: "http://localhost"
+#      replace: "http://{{ host_ip }}:{{ openaudit_port }}"
+#    with_items: "{{ filelist.stdout_lines }}"
+ 
+  - name: copy mysql datadir
+    shell: cp -pr /var/lib/mysql/ /root/
+
+  - name: copy log dir
+    shell: cp -pr /var/log/ /root/
+
+- hosts: dockerhost
+  become: yes
+
+  vars_files:
+    - "vars/config.yml"
+
+  tasks:
+
+  - name: Stop base_os container
+    docker_container:
+      name: "{{ item.image_name }}"
+      state: stopped
+    with_items: "{{ images }}"
+
+  - name: absent base_os image
+    docker_image:
+      name: "{{ item.image_name }}:{{ item.image_tag }}"
+      state: absent
+    with_items: "{{ openaudit }}"
+
+  - name: docker commit
+    shell: docker commit "{{ item.base_os_name }}" "{{ item.image_name }}:{{ item.image_tag }}"
+    with_items: "{{ openaudit }}"
+
+  - name: absent base_os container
+    docker_container:
+      name: "{{ item.image_name }}"
+      state: absent
+    with_items: "{{ images }}"
+

@@ -3,6 +3,9 @@ centos6 ansible_connection=docker
 centos7 ansible_connection=docker
 repocentos6 ansible_connection=docker
 repocentos7 ansible_connection=docker
+openaudit ansible_connection=docker
+redash ansible_connection=docker
+superset ansible_connection=docker
 
 [dockerhost]
 localhost

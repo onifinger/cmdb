@@ -6,7 +6,7 @@
 
   tasks:
 
-  - name: Create a yum container
+  - name: Create a openaudit container
     docker_container:
       name: "{{ item.image_name }}"
       image: "{{ item.image_name }}:{{ item.image_tag }}"
@@ -16,8 +16,12 @@
           ipv4_address: "{{ item.ip }}"
       volumes:
         - "/opt/dockerpv/{{ item.image_name }}/var/log:/var/log"
-        - "/opt/dockerpv/{{ item.image_name }}/var/cache/yum:/var/cache/yum"
+        - "/opt/dockerpv/{{ item.image_name }}/var/lib/mysql:/var/lib/mysql"
         - "/etc/localtime:/etc/localtime:ro"
-        - "{{ item.dir }}:{{ item.dir }}"
-      command: ["sleep", "infinity"]
-    with_items: "{{ yum_repo }}"
+      command: ["sh", "openaudit.sh"]
+      purge_networks: yes
+      log_driver: syslog
+      log_options: "tag={{ item.image_name }}"
+      ports:
+        - "{{ openaudit_port }}:80"
+    with_items: "{{ openaudit }}"

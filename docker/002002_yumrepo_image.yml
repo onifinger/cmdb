@@ -19,13 +19,18 @@
 
 - hosts: centos
 #  become: yes
-  connection: docker
+#  connection: docker
   gather_facts: no
 
   vars_files:
     - "vars/config.yml"
 
   tasks:
+  - name: set proxy to yum
+    lineinfile:
+      path: /etc/yum.conf
+      line: "proxy=http://{{ local_proxy }}:3128"
+
   - name: yum install yum-utils createrepo
     yum:
       name: "{{ item }}"
@@ -33,9 +38,9 @@
     with_items:
       - yum-utils
       - createrepo
-    environment:
-      https_proxy: "http://{{ local_proxy }}"
-      http_proxy: "http://{{ local_proxy }}"
+#    environment:
+#      https_proxy: "http://{{ local_proxy }}"
+#      http_proxy: "http://{{ local_proxy }}"
 
 - hosts: dockerhost
   become: yes

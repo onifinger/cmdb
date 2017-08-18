@@ -1,0 +1,27 @@
+- hosts: dockerhost
+  become: yes
+
+  vars_files:
+    - "vars/config.yml"
+
+  tasks:
+
+  - name: Create a redash container
+    docker_container:
+      name: "{{ item.image_name }}"
+      image: "{{ item.image_name }}:{{ item.image_tag }}"
+      hostname: "{{ item.image_name }}"
+      networks:
+        - name: "{{ network_name }}"
+          ipv4_address: "{{ item.ip }}"
+      volumes:
+        - "/opt/dockerpv/{{ item.image_name }}/var/log:/var/log"
+        - "/opt/dockerpv/{{ item.image_name }}/var/lib/pgsql/data:/var/lib/pgsql/data"
+        - "/etc/localtime:/etc/localtime:ro"
+      command: ["sh", "redash.sh"]
+      purge_networks: yes
+      log_driver: syslog
+      log_options: "tag={{ item.image_name }}"
+      ports:
+        - "{{ redash_port }}:80"
+    with_items: "{{ redash }}"

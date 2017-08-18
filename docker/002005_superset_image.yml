@@ -1,0 +1,138 @@
+- hosts: dockerhost
+  become: yes
+
+  vars_files:
+    - "vars/config.yml"
+
+  tasks:
+
+  - name: Create a os container
+    docker_container:
+      name: "{{ item.image_name }}"
+      image: "{{ item.image_name }}:{{ item.image_tag }}"
+      command: ["sleep", "infinity"]
+      networks:
+        - name: "{{ network_name }}"
+          ipv4_address: "{{ item.ip }}"
+      purge_networks: yes
+    with_items: "{{ images }}"
+#    when: item.image_name == 'centos7'
+
+- hosts: centos7
+#  become: yes
+#  connection: docker
+  gather_facts: no
+
+  vars_files:
+    - "vars/config.yml"
+
+  tasks:
+  - name: Copies files to remote locations
+    copy:
+      src: "{{ item.src }}"
+      dest: "{{ item.dest }}"
+      mode: u=rwx,g=r,o=r
+    with_items:
+      - { src: "files/superset/superset.sh", dest: "/usr/local/bin/superset.sh" }
+
+  - name: yum install
+    yum:
+      name: "{{ item }}"
+      state: latest
+    with_items:
+      - python-setuptools
+      - gcc
+      - gcc-c++
+      - libffi-devel
+      - python-devel
+      - python-pip
+      - python-wheel
+      - openssl-devel
+      - cyrus-sasl-devel
+      - openldap-devel
+      - anaconda-core
+      - python-psycopg2
+      - MySQL-python
+    environment:
+      https_proxy: "http://{{ local_proxy }}"
+      http_proxy: "http://{{ local_proxy }}"
+
+  - name: set sys.setdefaultencoding to sitecustomize.py
+    blockinfile:
+      dest: "{{ item }}"
+      create: yes
+      block: |
+        import sys
+        sys.setdefaultencoding('utf-8')
+    with_items:
+      - /usr/lib/python2.7/site-packages/sitecustomize.py
+      - /usr/lib64/python2.7/site-packages/sitecustomize.py
+
+  - name: pip install pexpect,PyMySQL,superset
+    pip:
+      name: "{{ item }}"
+      state: latest
+    with_items:
+      - pexpect
+      - PyMySQL
+      - superset
+    environment:
+      https_proxy: "http://{{ local_proxy }}"
+      http_proxy: "http://{{ local_proxy }}"
+
+  - name: fabmanager create-admin --app superset
+    expect:
+      command: "fabmanager create-admin --app superset"
+      responses:
+        (Username.*admin.*:.): "{{ superset_user.username }}"
+        (User.first.name.*admin.*:.): "{{ superset_user.userfirstname }}"
+        (User.last.name..user.*:.): "{{ superset_user.userlastname }}"
+        (Email.*admin@fab.org.*:.): "{{ superset_user.email }}"
+        (Password.*:.): "{{ superset_user.password }}"
+        (Repeat.for.confirmation.*:.): "{{ superset_user.password }}"
+      timeout: 30
+
+  - name: superset db upgrade
+    shell: superset db upgrade
+
+  - name: superset load_examples
+    shell: superset load_examples
+
+  - name: superset init
+    shell: superset init
+
+  - name: copy superset datadir
+    shell: cp -pr /root/.superset /root/superset
+
+  - name: copy log dir
+    shell: cp -pr /var/log/ /root/
+
+- hosts: dockerhost
+  become: yes
+
+  vars_files:
+    - "vars/config.yml"
+
+  tasks:
+
+  - name: Stop base_os container
+    docker_container:
+      name: "{{ item.image_name }}"
+      state: stopped
+    with_items: "{{ images }}"
+
+  - name: absent base_os image
+    docker_image:
+      name: "{{ item.image_name }}:{{ item.image_tag }}"
+      state: absent
+    with_items: "{{ superset }}"
+
+  - name: docker commit
+    shell: docker commit "{{ item.base_os_name }}" "{{ item.image_name }}:{{ item.image_tag }}"
+    with_items: "{{ superset }}"
+
+  - name: absent base_os container
+    docker_container:
+      name: "{{ item.image_name }}"
+      state: absent
+    with_items: "{{ images }}"

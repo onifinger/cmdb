@@ -34,17 +34,16 @@
       path: "{{ pydir }}"
       state: directory
 
-#  - name: install docker-ps(python module)
-#    pip:
-#      name: docker-ps
-#      extra_args: "--prefix {{ pydir }}"
-#      state: latest
-
-  - name: install docker-py(python module)
+  - name: pip install docker-py,pexpect,bigsuds,f5-sdk
     pip:
-      name: docker-py
+      name: "{{ item }}"
       extra_args: "--prefix {{ pydir }}"
       state: latest
+    with_items:
+      - docker-py
+      - pexpect
+      - bigsuds
+      - f5-sdk
 
   - name: create a network with options
     docker_network:

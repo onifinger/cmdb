@@ -1,0 +1,27 @@
+- hosts: dockerhost
+  become: yes
+
+  vars_files:
+    - "vars/config.yml"
+
+  tasks:
+
+  - name: Create a superset container
+    docker_container:
+      name: "{{ item.image_name }}"
+      image: "{{ item.image_name }}:{{ item.image_tag }}"
+      hostname: "{{ item.image_name }}"
+      networks:
+        - name: "{{ network_name }}"
+          ipv4_address: "{{ item.ip }}"
+      volumes:
+        - "/opt/dockerpv/{{ item.image_name }}/var/log:/var/log"
+        - "/opt/dockerpv/{{ item.image_name }}/root/superset:/root/.superset"
+        - "/etc/localtime:/etc/localtime:ro"
+      command: ["sh", "superset.sh"]
+      purge_networks: yes
+      log_driver: syslog
+      log_options: "tag={{ item.image_name }}"
+      ports:
+        - "{{ superset_port }}:8088"
+    with_items: "{{ superset }}"

@@ -23,7 +23,7 @@
 
 - hosts: centos
 #  become: yes
-  connection: docker
+#  connection: docker
   gather_facts: no
 
   vars_files:
