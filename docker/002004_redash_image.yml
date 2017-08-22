@@ -90,7 +90,7 @@
     with_items:
       - "host    all             all             localhost            trust"
 
-  - name: init postgresql
+  - name: start postgresql
     shell: su - postgres -g postgres -c "/usr/bin/pg_ctl start -D /var/lib/pgsql/data -s -w -t 300"
 
   - name: set ProxyPass to /etc/httpd/conf.d/redash.conf
@@ -120,8 +120,11 @@
     with_items:
       - { url: "https://github.com/getredash/redash/archive/master.zip", dest: "/opt/redash/master.zip" }
       - { url: "https://bootstrap.pypa.io/get-pip.py", dest: "/root/work/pip/get-pip.py" }
+    environment:
+      https_proxy: "http://{{ local_proxy }}"
+      http_proxy: "http://{{ local_proxy }}"
 
-  - name: download redash
+  - name: unzip redash
     shell: unzip /opt/redash/master.zip -d /opt/redash/
 
   - name: pip download pip,setuptools,wheel
@@ -166,7 +169,7 @@
 
   - name: git config
     git_config:
-      name: alias.ci
+#      name: alias.ci
       scope: global
       value: commit
     with_items:
