@@ -4,6 +4,11 @@
   vars_files:
     - "vars/config.yml"
 
+# proxyを使用しない環境ではコメントアウト
+#  environment:
+#    https_proxy: "http://{{ local_proxy }}"
+#    http_proxy: "http://{{ local_proxy }}"
+
   tasks:
   - name: docker pull os_image
     docker_image:
@@ -28,6 +33,11 @@
 
   vars_files:
     - "vars/config.yml"
+
+# proxyを使用しない環境ではコメントアウト
+#  environment:
+#    https_proxy: "http://{{ local_proxy }}"
+#    http_proxy: "http://{{ local_proxy }}"
 
   tasks:
   - name: edit yum.repos.d(base mirrorlist)
@@ -63,9 +73,6 @@
       state: latest
     with_items:
       - centos-release-scl
-    environment:
-      https_proxy: "http://{{ local_proxy }}"
-      http_proxy: "http://{{ local_proxy }}"
       
   - name: edit yum.repos.d(centos-sclo-rh)
     replace:
@@ -85,9 +92,6 @@
       state: latest
     with_items:
       - epel-release
-    environment:
-      https_proxy: "http://{{ local_proxy }}"
-      http_proxy: "http://{{ local_proxy }}"
 
   - name: edit yum.repos.d(epel mirrorlist)
     replace:
@@ -105,9 +109,6 @@
     yum:
       name: "*"
       state: latest
-    environment:
-      https_proxy: "http://{{ local_proxy }}"
-      http_proxy: "http://{{ local_proxy }}"
 
 - hosts: dockerhost
   become: yes

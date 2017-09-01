@@ -1,0 +1,28 @@
+- hosts: dockerhost
+  become: yes
+
+  vars_files:
+    - "vars/config.yml"
+
+  tasks:
+  - name: Load openaudit image from archive 
+    docker_image:
+      name: "{{ images_dir }}/{{ item.image_name }}_{{ item.image_tag }}"
+      load_path: "{{ images_dir }}/{{ item.image_name }}_{{ item.image_tag }}.tar.gz"
+    with_items:
+      "{{ openaudit }}"
+    
+  - name: Load redash image from archive
+    docker_image:
+      name: "{{ images_dir }}/{{ item.image_name }}_{{ item.image_tag }}"
+      load_path: "{{ images_dir }}/{{ item.image_name }}_{{ item.image_tag }}.tar.gz"
+    with_items:
+      "{{ redash }}"
+
+  - name: Load superset image from archive
+    docker_image:
+      name: "{{ images_dir }}/{{ item.image_name }}_{{ item.image_tag }}"
+      load_path: "{{ images_dir }}/{{ item.image_name }}_{{ item.image_tag }}.tar.gz"
+    with_items:
+      "{{ superset }}"
+

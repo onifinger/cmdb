@@ -1,7 +1,7 @@
 #/bin/bash
 
-if [ ! -d /root/.superset ] ; then
-  cp -prf  /root/superset /root/.superset
+if [ ! -e /root/.superset/superset.db ] ; then
+  cp -prf  /root/superset/superset.db /root/.superset/superset.db
 fi
 
 if [ ! -d /var/log/anaconda ] ; then

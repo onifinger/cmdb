@@ -4,6 +4,11 @@
   vars_files:
     - "vars/config.yml"
 
+# proxyを使用しない環境ではコメントアウト
+#  environment:
+#    https_proxy: "http://{{ local_proxy }}"
+#    http_proxy: "http://{{ local_proxy }}"
+
   tasks:
 
   - name: Create a os container
@@ -25,6 +30,11 @@
 
   vars_files:
     - "vars/config.yml"
+
+# proxyを使用しない環境ではコメントアウト
+#  environment:
+#    https_proxy: "http://{{ local_proxy }}"
+#    http_proxy: "http://{{ local_proxy }}"
 
   tasks:
   - name: Copies files to remote locations
@@ -53,9 +63,6 @@
       - anaconda-core
       - python-psycopg2
       - MySQL-python
-    environment:
-      https_proxy: "http://{{ local_proxy }}"
-      http_proxy: "http://{{ local_proxy }}"
 
   - name: set sys.setdefaultencoding to sitecustomize.py
     blockinfile:
@@ -76,9 +83,6 @@
       - pexpect
       - PyMySQL
       - superset
-    environment:
-      https_proxy: "http://{{ local_proxy }}"
-      http_proxy: "http://{{ local_proxy }}"
 
   - name: fabmanager create-admin --app superset
     expect:
@@ -112,6 +116,11 @@
 
   vars_files:
     - "vars/config.yml"
+
+# proxyを使用しない環境ではコメントアウト
+#  environment:
+#    https_proxy: "http://{{ local_proxy }}"
+#    http_proxy: "http://{{ local_proxy }}"
 
   tasks:
 

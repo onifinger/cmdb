@@ -4,6 +4,10 @@
   vars_files:
     - "vars/config.yml"
 
+#  environment:
+#    https_proxy: "http://{{ local_proxy }}"
+#    http_proxy: "http://{{ local_proxy }}"
+
   tasks:
 
   - name: Create a os container
@@ -26,10 +30,6 @@
     - "vars/config.yml"
 
   tasks:
-  - name: set proxy to yum
-    lineinfile:
-      path: /etc/yum.conf
-      line: "proxy=http://{{ local_proxy }}:3128"
 
   - name: yum install yum-utils createrepo
     yum:
@@ -38,9 +38,6 @@
     with_items:
       - yum-utils
       - createrepo
-#    environment:
-#      https_proxy: "http://{{ local_proxy }}"
-#      http_proxy: "http://{{ local_proxy }}"
 
 - hosts: dockerhost
   become: yes

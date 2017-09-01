@@ -1,0 +1,85 @@
+- hosts: dockerhost
+  become: yes
+
+  vars_files:
+    - "vars/config.yml"
+
+  tasks:
+  - name: disabled selinux
+    selinux: state=disabled
+
+  - name: stop/disabled firewalld
+    service:
+      name: firewalld
+      state: stopped
+      enabled: no
+
+  - name: start iptables
+    service:
+      name: iptables
+      state: started
+      enabled: yes
+
+  - name: set "sudo_flags" to ansible.cfg
+    lineinfile:
+      dest: "/etc/ansible/ansible.cfg"
+      insertafter: "^#sudo_flags"
+      line: "sudo_flags = -H -S -n -i"
+
+  - name: set "ssh_args" to ansible.cfg
+    lineinfile:
+      dest: "/etc/ansible/ansible.cfg"
+      insertafter: "^#ssh_args"
+      line: "ssh_args = -o ControlMaster=auto -o ControlPersist=60s -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+
+  - name: set "log_path" to ansible.cfg
+    lineinfile:
+      dest: "/etc/ansible/ansible.cfg"
+      insertafter: "^#log_path"
+      line: "log_path = /var/log/ansible.log"
+
+  - name: Change authority of ansible.log
+    file:
+      path: /var/log/ansible.log
+      state: touch
+      mode: "0666"
+
+  - name: restart docker
+    service:
+      name: docker
+      state: restarted
+      enabled: yes
+
+  - name: create a network with options
+    docker_network:
+      name: "{{ network_name }}"
+      ipam_options:
+        subnet: "{{ subnet }}"
+        gateway: "{{ gateway }}"
+        iprange: "{{ iprange }}"
+      driver_options:
+        com.docker.network.bridge.name: "{{ network_name }}"
+
+  - name: allow access from container to host
+    iptables:
+      action: insert
+      chain: INPUT
+      jump: ACCEPT
+      source: "{{ item }}"
+    with_items:
+      "{{ local_net }}"
+
+  - name: set rule to iptables
+    lineinfile:
+      dest: "/etc/sysconfig/iptables"
+      insertafter: "^:OUTPUT"
+      line: "-A INPUT -s {{ item }} -j ACCEPT"
+    with_items:
+      "{{ local_net }}"
+
+  - name: restart docker
+    service:
+      name: docker
+      state: restarted
+      enabled: yes
+

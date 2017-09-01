@@ -1,5 +1,8 @@
 #/bin/bash
 
+find /var/run/httpd -type f -exec rm -f {} \;
+find /var/run/mysqld -type f -exec rm -f {} \;
+
 if [ ! -d /var/lib/mysql/mysql ] ; then
   cp -prf /root/mysql/* /var/lib/mysql/
   chown -R mysql:mysql /var/lib/mysql

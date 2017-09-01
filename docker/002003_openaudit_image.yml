@@ -4,6 +4,11 @@
   vars_files:
     - "vars/config.yml"
 
+# proxyを使用しない環境ではコメントアウト
+#  environment:
+#    https_proxy: "http://{{ local_proxy }}"
+#    http_proxy: "http://{{ local_proxy }}"
+
   tasks:
 
   - name: Create a os container
@@ -25,6 +30,11 @@
 
   vars_files:
     - "vars/config.yml"
+
+# proxyを使用しない環境ではコメントアウト
+#  environment:
+#    https_proxy: "http://{{ local_proxy }}"
+#    http_proxy: "http://{{ local_proxy }}"
 
   tasks:
   - name: yum install
@@ -56,9 +66,6 @@
       - logrotate
       - python-pip
       - MySQL-python 
-    environment:
-      https_proxy: "http://{{ local_proxy }}"
-      http_proxy: "http://{{ local_proxy }}"
     when: inventory_hostname == 'centos6'
 
   - name: yum install
@@ -91,9 +98,6 @@
       - python-pip
       - MySQL-python
       - perl-Time-modules
-    environment:
-      https_proxy: "http://{{ local_proxy }}"
-      http_proxy: "http://{{ local_proxy }}"
     when: inventory_hostname == 'centos7'
 
   - name: pip install pexpect
@@ -102,9 +106,6 @@
       state: latest
     with_items:
       - pexpect
-    environment:
-      https_proxy: "http://{{ local_proxy }}"
-      http_proxy: "http://{{ local_proxy }}"
 
 #  - name: Copies files to remote locations
 #    copy:
@@ -114,6 +115,22 @@
 #    with_items:
 #      - { src: "files/openaudit/{{ openaudit_install_file }}", dest: "/root/{{ openaudit_install_file }}" }
 
+  - name: /etc/httpd/conf.d/welcome.conf check
+    stat: path=/etc/httpd/conf.d/welcome.conf.org
+    register: foo_stat
+
+  - name: Move welcome.conf to welcome.conf.org
+    command: mv /etc/httpd/conf.d/welcome.conf /etc/httpd/conf.d/welcome.conf.org
+    when: not foo_stat.stat.exists
+
+  - name: /etc/httpd/conf/httpd.conf check
+    stat: path=/etc/httpd/conf/httpd.conf.org
+    register: foo_stat
+
+  - name: Move httpd.conf to httpd.conf.org
+    command: mv /etc/httpd/conf/httpd.conf /etc/httpd/conf/httpd.conf.org
+    when: not foo_stat.stat.exists
+
   - name: Copies files to remote locations
     copy:
       src: "{{ item.src }}"
@@ -121,6 +138,8 @@
       mode: u=rwx,g=r,o=r
     with_items:
       - { src: "files/openaudit/openaudit_6.sh", dest: "/usr/local/bin/openaudit.sh" }
+      - { src: "files/openaudit/httpd.conf", dest: "/etc/httpd/conf/httpd.conf" }
+      - { src: "files/openaudit/security.conf", dest: "/etc/httpd/conf.d/security.conf" }
     when: inventory_hostname == 'centos6'
 
   - name: Copies files to remote locations
@@ -130,6 +149,8 @@
       mode: u=rwx,g=r,o=r
     with_items:
       - { src: "files/openaudit/openaudit_7.sh", dest: "/usr/local/bin/openaudit.sh" }
+      - { src: "files/openaudit/httpd.conf", dest: "/etc/httpd/conf/httpd.conf" }
+      - { src: "files/openaudit/security.conf", dest: "/etc/httpd/conf.d/security.conf" }
     when: inventory_hostname == 'centos7'
 
   - name: start mysqld
@@ -202,6 +223,8 @@
       - 'display_errors'
       - 'upload_max_filesize'
       - 'date.timezone'
+      - 'expose_php'
+      - 'error_log'
 
   - name: edit php.ini
     lineinfile:
@@ -216,14 +239,22 @@
       - { name: 'display_errors'     , value: 'display_errors = On'        }
       - { name: 'upload_max_filesize', value: 'upload_max_filesize = 10M'  }
       - { name: 'date.timezone'      , value: 'date.timezone = Asia/Tokyo' }
+      - { name: 'expose_php'         , value: 'expose_php = Off'           }
+      - { name: 'error_log'          , value: 'error_log = /var/log/php/php_error.log' }
+
+  - name: create directory for php
+    file:
+      path: "{{ item }}"
+      state: directory
+      owner: apache
+      group: apache
+    with_items:
+      - /var/log/php
 
   - name: download openaudit_install_file
     get_url:
       url: http://dl-openaudit.opmantek.com/{{ openaudit_install_file }}
       dest: /root/{{ openaudit_install_file }}
-    environment:
-      https_proxy: "http://{{ local_proxy }}"
-      http_proxy: "http://{{ local_proxy }}"
 
   - name: chmod +x openaudit_install_file
     file:
@@ -239,15 +270,27 @@
         "Hit <Enter> when ready to continue: ": ""
         "Enter the MySQL root user's password: ": "{{ openaudit_mysql_pass }}"
       timeout: 600
-    environment:
-      https_proxy: "http://{{ local_proxy }}"
-      http_proxy: "http://{{ local_proxy }}"    
 
   - name: edit database.php
     replace:
       path: "/usr/local/open-audit/code_igniter/application/config/database.php"
       regexp: "localhost"
       replace: "127.0.0.1"
+
+  - name: edit database.php -2
+    replace:
+      path: "/usr/local/open-audit/code_igniter/application/config/database.php"
+      regexp: "openauditpassword"
+      replace: "{{ openaudit_mysql_pass }}"
+
+  - name: change openaudit database password
+    mysql_user:
+      login_user: root
+      login_password: "{{ openaudit_mysql_pass }}"
+      name: openaudit
+      host: localhost
+      password: "{{ openaudit_mysql_pass }}"
+      state: present
 
   - name: copy audit scripts
     shell: cp -pr /usr/local/open-audit/other /var/www/html/
@@ -305,6 +348,11 @@
 
   vars_files:
     - "vars/config.yml"
+
+# proxyを使用しない環境ではコメントアウト
+#  environment:
+#    https_proxy: "http://{{ local_proxy }}"
+#    http_proxy: "http://{{ local_proxy }}"
 
   tasks:
 

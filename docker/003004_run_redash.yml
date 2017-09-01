@@ -16,7 +16,7 @@
           ipv4_address: "{{ item.ip }}"
       volumes:
         - "/opt/dockerpv/{{ item.image_name }}/var/log:/var/log"
-        - "/opt/dockerpv/{{ item.image_name }}/var/lib/pgsql/data:/var/lib/pgsql/data"
+        - "/opt/dockerpv/{{ item.image_name }}/var/opt/rh/rh-postgresql95/lib/pgsql/data:/var/opt/rh/rh-postgresql95/lib/pgsql/data"
         - "/etc/localtime:/etc/localtime:ro"
       command: ["sh", "redash.sh"]
       purge_networks: yes

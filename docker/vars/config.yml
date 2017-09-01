@@ -1,3 +1,6 @@
+# 基本ディレクトリ
+base_dir: /root/work/201709_CMDB_SETUP
+
 # 内部で使用するドメイン名
 local_zone: ypro.local
 
@@ -5,7 +8,7 @@ local_zone: ypro.local
 host_name: "cmdb.{{ local_zone }}"
 
 # ホストのIPアドレス
-host_ip: 172.23.141.63
+host_ip: 172.23.141.62
 #host_ip: 192.168.56.4
 
 # ホストのインターフェイスカードの名前
@@ -85,20 +88,27 @@ yum_repo:
 # openauditの設定
 openaudit_install_file: OAE-Linux-x86_64-release_1.12.10.1.run
 #openaudit_install_file: OAE-Linux-x86_64-release_2.0.2.run
-openaudit_mysql_pass: 12345678
+openaudit_mysql_pass: 48G8V6KavkbxMRsB
 openaudit_port: 8000
 openaudit:
   - { base_os_name: 'centos6', base_os_tag: '6.9_v001', image_name: 'openaudit', image_tag: '1.12.10.1_v001', ip: '192.168.10.130' }
 #  - { base_os_name: 'centos7', base_os_tag: '7.3.1611_v001', image_name: 'openaudit', image_tag: '2.0.2_v001', ip: '192.168.10.130' }
 
 # redashの設定
+redash_base_path: /opt/redash
+redash_branch: master
+redash_version: 2.0.0.b2990
+redash_latest_url: "https://s3.amazonaws.com/redash-releases/redash.{{ redash_version }}.tar.gz"
+redash_version_dir: "{{ redash_base_path }}/redash.{{ redash_version }}"
+redash_tarball: /tmp/redash.tar.gz
+redash_files_base_url: "https://raw.githubusercontent.com/getredash/redash/{{ redash_branch }}/setup/ubuntu/files"
 redash_port: 8001
 redash:
-  - { base_os_name: 'centos7', base_os_tag: '7.3.1611_v001', image_name: 'redash', image_tag: '3.0.0_v001', ip: '192.168.10.131' }
+  - { base_os_name: 'centos7', base_os_tag: '7.3.1611_v001', image_name: 'redash', image_tag: '2.0.0.b2990_v001', ip: '192.168.10.131' }
 
 # supersetの設定
 superset_port: 8088
-superset_user: { username: 'admin', userfirstname: 'admin', userlastname: 'admin', email: 'root@localhost.localdomain', password: 'password' }
+superset_user: { username: 'admin', userfirstname: 'admin', userlastname: 'admin', email: 'root@localhost.localdomain', password: '48G8V6KavkbxMRsB' }
 superset:
   - { base_os_name: 'centos7', base_os_tag: '7.3.1611_v001', image_name: 'superset', image_tag: '0.18.3_v001', ip: '192.168.10.132'
 }
