@@ -5,8 +5,8 @@
     - "vars/config.yml"
 
 #  environment:
-#    https_proxy: "http://{{ local_proxy }}"
-#    http_proxy: "http://{{ local_proxy }}"
+    https_proxy: "http://{{ local_proxy }}"
+    http_proxy: "http://{{ local_proxy }}"
 
   tasks:
 

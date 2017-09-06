@@ -4,6 +4,11 @@
   vars_files:
     - "vars/config.yml"
 
+# proxyを使用しない環境ではコメントアウト
+#  environment:
+#    https_proxy: "http://{{ local_proxy }}"
+#    http_proxy: "http://{{ local_proxy }}"
+
   tasks:
   - name: yum install additioanl packages
     yum:
@@ -16,18 +21,18 @@
     hostname:
       name: "{{ host_name }}"
 
-  - name: Setting environment variables
-    blockinfile:
-      dest: "/etc/profile.d/ansible_python.sh"
-      create: yes
-      block: |
-        http_proxy=http://127.0.0.1:3128
-        export http_proxy
-        https_proxy=http://127.0.0.1:3128
-        export https_proxy
-        PATH={{ pydir }}/bin:$PATH
-        PYTHONPATH={{ pypath }}:$PYTHONPATH
-        export PYTHONPATH
+#  - name: Setting environment variables
+#    blockinfile:
+#      dest: "/etc/profile.d/ansible_python.sh"
+#      create: yes
+#      block: |
+#        http_proxy=http://127.0.0.1:3128
+#        export http_proxy
+#        https_proxy=http://127.0.0.1:3128
+#        export https_proxy
+#        PATH={{ pydir }}/bin:$PATH
+#        PYTHONPATH={{ pypath }}:$PYTHONPATH
+#        export PYTHONPATH
 
   - name: disabled selinux
     selinux: state=disabled
@@ -73,55 +78,55 @@
       state: touch
       mode: "0666"
 
-  - name: yum install unbound
-    yum:
-      name: "{{ item }}"
-      state: latest
-    with_items:
-      - unbound
-      - NetworkManager-glib
+#  - name: yum install unbound
+#    yum:
+#      name: "{{ item }}"
+#      state: latest
+#    with_items:
+#      - unbound
+#      - NetworkManager-glib
 
-  - name: initialize local-zone,forward-zone to unbound
-    file:
-      path: "{{ item }}"
-      state: absent
-    with_items:
-      - /etc/unbound/local.d/local-zone.conf
-      - /etc/unbound/conf.d/forward-zone.conf
+#  - name: initialize local-zone,forward-zone to unbound
+#    file:
+#      path: "{{ item }}"
+#      state: absent
+#    with_items:
+#      - /etc/unbound/local.d/local-zone.conf
+#      - /etc/unbound/conf.d/forward-zone.conf
 
-  - name: Setting environment variables to unbound(local-zone)
-    lineinfile:
-      dest: "/etc/unbound/local.d/local-zone.conf"
-      create: yes
-      line: "{{ item }}"
-    with_items:
-        "{{ local_server }}"
+#  - name: Setting environment variables to unbound(local-zone)
+#    lineinfile:
+#      dest: "/etc/unbound/local.d/local-zone.conf"
+#      create: yes
+#      line: "{{ item }}"
+#    with_items:
+#        "{{ local_server }}"
 
-  - name: Setting environment variables to unbound(forward-zone)
-    lineinfile:
-      dest: "/etc/unbound/conf.d/forward-zone.conf"
-      create: yes
-      line: "{{ item }}"
-    with_items:
-        "{{ forward_zone }}"
-    when: forward_zone is defined
+#  - name: Setting environment variables to unbound(forward-zone)
+#    lineinfile:
+#      dest: "/etc/unbound/conf.d/forward-zone.conf"
+#      create: yes
+#      line: "{{ item }}"
+#    with_items:
+#        "{{ forward_zone }}"
+#    when: forward_zone is defined
 
-  - name: restart unbound
-    service:
-      name: unbound
-      state: restarted
-      enabled: yes
+#  - name: restart unbound
+#    service:
+#      name: unbound
+#      state: restarted
+#      enabled: yes
 
-  - name: Setting DNS Server to resolve.conf
-    nmcli:
-      conn_name: "{{ nic_interface }}"
-      type: ethernet
-      dns4: "{{ host_ip }}"
-      state: present
+#  - name: Setting DNS Server to resolve.conf
+#    nmcli:
+#      conn_name: "{{ nic_interface }}"
+#      type: ethernet
+#      dns4: "{{ host_ip }}"
+#      state: present
 
-  - name: restart NetworkManager
-    service:
-      name: NetworkManager
-      state: restarted
-      enabled: yes
+#  - name: restart NetworkManager
+#    service:
+#      name: NetworkManager
+#      state: restarted
+#      enabled: yes
 

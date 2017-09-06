@@ -3,6 +3,11 @@
 
   vars_files:
     - "vars/config.yml"
+
+# proxyを使用しない環境ではコメントアウト
+#  environment:
+#    https_proxy: "http://{{ local_proxy }}"
+#    http_proxy: "http://{{ local_proxy }}"
   
   tasks:
 
@@ -13,15 +18,17 @@
     with_items:
       - docker
       - python2-pip
+      - python-docker-py
+      - python-docker-pycreds
 
-  - name: set proxy to docker
-    lineinfile:
-      path: /lib/systemd/system/docker.service
-      insertbefore: ".*ExecStart.*"
-      line: "Environment=\"http_proxy=http://127.0.0.1:3128\""
+#  - name: set proxy to docker
+#    lineinfile:
+#      path: /lib/systemd/system/docker.service
+#      insertbefore: ".*ExecStart.*"
+#      line: "Environment=\"http_proxy=http://127.0.0.1:3128\""
 
-  - name: systemd demon reload
-    shell: systemctl daemon-reload
+#  - name: systemd demon reload
+#    shell: systemctl daemon-reload
 
   - name: restart docker
     service:
@@ -29,21 +36,21 @@
       state: restarted
       enabled: yes
 
-  - name: create directory for python modules
-    file:
-      path: "{{ pydir }}"
-      state: directory
+#  - name: create directory for python modules
+#    file:
+#      path: "{{ pydir }}"
+#      state: directory
 
-  - name: pip install docker-py,pexpect,bigsuds,f5-sdk
-    pip:
-      name: "{{ item }}"
-      extra_args: "--prefix {{ pydir }}"
-      state: latest
-    with_items:
-      - docker-py
-      - pexpect
-      - bigsuds
-      - f5-sdk
+#  - name: pip install docker-py,pexpect,bigsuds,f5-sdk
+#    pip:
+#      name: "{{ item }}"
+#      extra_args: "--prefix {{ pydir }}"
+#      state: latest
+#    with_items:
+#      - docker-py
+#      - pexpect
+#      - bigsuds
+#      - f5-sdk
 
   - name: create a network with options
     docker_network:
@@ -72,9 +79,9 @@
     with_items:
       "{{ local_net }}"
 
-  - name: restart docker
-    service:
-      name: docker
-      state: restarted
-      enabled: yes
+#  - name: restart docker
+#    service:
+#      name: docker
+#      state: restarted
+#      enabled: yes
 
