@@ -7,22 +7,28 @@
   tasks:
   - name: Load openaudit image from archive 
     docker_image:
-      name: "{{ images_dir }}/{{ item.image_name }}_{{ item.image_tag }}"
+      name: "{{ item.image_name }}:{{ item.image_tag }}"
       load_path: "{{ images_dir }}/{{ item.image_name }}_{{ item.image_tag }}.tar.gz"
+      http_timeout: 360
+      timeout: 360
     with_items:
       "{{ openaudit }}"
     
   - name: Load redash image from archive
     docker_image:
-      name: "{{ images_dir }}/{{ item.image_name }}_{{ item.image_tag }}"
+      name: "{{ item.image_name }}:{{ item.image_tag }}"
       load_path: "{{ images_dir }}/{{ item.image_name }}_{{ item.image_tag }}.tar.gz"
+      http_timeout: 360
+      timeout: 360
     with_items:
       "{{ redash }}"
 
   - name: Load superset image from archive
     docker_image:
-      name: "{{ images_dir }}/{{ item.image_name }}_{{ item.image_tag }}"
+      name: "{{ item.image_name }}:{{ item.image_tag }}"
       load_path: "{{ images_dir }}/{{ item.image_name }}_{{ item.image_tag }}.tar.gz"
+      http_timeout: 360
+      timeout: 360
     with_items:
       "{{ superset }}"
 

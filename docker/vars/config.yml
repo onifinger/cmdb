@@ -1,5 +1,8 @@
 # 基本ディレクトリ
-base_dir: /root/work/201709_CMDB_SETUP
+base_dir: /root/work/cmdb
+
+# docker imageのあるディレクトリ
+images_dir: "{{ base_dir }}/images"
 
 # 内部で使用するドメイン名
 local_zone: ypro.local
@@ -8,7 +11,7 @@ local_zone: ypro.local
 host_name: "cmdb.{{ local_zone }}"
 
 # ホストのIPアドレス
-host_ip: 172.23.141.62
+host_ip: 10.16.166.102
 #host_ip: 192.168.56.4
 
 # ホストのインターフェイスカードの名前
@@ -16,7 +19,7 @@ nic_interface: ens32
 #nic_interface: enp0s3
 
 # localのProxy
-local_proxy: "{{ host_ip }}:3128"
+local_proxy: "user:password@ip:port"
 
 # dockerで使用するIPアドレス帯域（デフォルトと、使いする独自ネットワーク）
 default_bridge: 172.17.0.0/16
@@ -102,13 +105,13 @@ redash_latest_url: "https://s3.amazonaws.com/redash-releases/redash.{{ redash_ve
 redash_version_dir: "{{ redash_base_path }}/redash.{{ redash_version }}"
 redash_tarball: /tmp/redash.tar.gz
 redash_files_base_url: "https://raw.githubusercontent.com/getredash/redash/{{ redash_branch }}/setup/ubuntu/files"
-redash_port: 8001
+redash_port: 82
 redash:
   - { base_os_name: 'centos7', base_os_tag: '7.3.1611_v001', image_name: 'redash', image_tag: '2.0.0.b2990_v001', ip: '192.168.10.131' }
 
 # supersetの設定
 superset_port: 8088
 superset_user: { username: 'admin', userfirstname: 'admin', userlastname: 'admin', email: 'root@localhost.localdomain', password: '48G8V6KavkbxMRsB' }
+superset_version: 0.19.1
 superset:
-  - { base_os_name: 'centos7', base_os_tag: '7.3.1611_v001', image_name: 'superset', image_tag: '0.18.3_v001', ip: '192.168.10.132'
-}
+  - { base_os_name: 'centos7', base_os_tag: '7.3.1611_v001', image_name: 'superset', image_tag: '0.19.1_v001', ip: '192.168.10.132' }

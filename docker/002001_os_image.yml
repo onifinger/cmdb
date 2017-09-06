@@ -5,9 +5,9 @@
     - "vars/config.yml"
 
 # proxyを使用しない環境ではコメントアウト
-#  environment:
-#    https_proxy: "http://{{ local_proxy }}"
-#    http_proxy: "http://{{ local_proxy }}"
+  environment:
+    https_proxy: "http://{{ local_proxy }}"
+    http_proxy: "http://{{ local_proxy }}"
 
   tasks:
   - name: docker pull os_image
@@ -35,9 +35,9 @@
     - "vars/config.yml"
 
 # proxyを使用しない環境ではコメントアウト
-#  environment:
-#    https_proxy: "http://{{ local_proxy }}"
-#    http_proxy: "http://{{ local_proxy }}"
+  environment:
+    https_proxy: "http://{{ local_proxy }}"
+    http_proxy: "http://{{ local_proxy }}"
 
   tasks:
   - name: edit yum.repos.d(base mirrorlist)

@@ -5,9 +5,9 @@
     - "vars/config.yml"
 
 # proxyを使用しない環境ではコメントアウト
-#  environment:
-#    https_proxy: "http://{{ local_proxy }}"
-#    http_proxy: "http://{{ local_proxy }}"
+  environment:
+    https_proxy: "http://{{ local_proxy }}"
+    http_proxy: "http://{{ local_proxy }}"
 
   tasks:
 
@@ -32,9 +32,9 @@
     - "vars/config.yml"
 
 # proxyを使用しない環境ではコメントアウト
-#  environment:
-#    https_proxy: "http://{{ local_proxy }}"
-#    http_proxy: "http://{{ local_proxy }}"
+  environment:
+    https_proxy: "http://{{ local_proxy }}"
+    http_proxy: "http://{{ local_proxy }}"
 
   tasks:
   - name: Copies files to remote locations
@@ -75,14 +75,18 @@
       - /usr/lib/python2.7/site-packages/sitecustomize.py
       - /usr/lib64/python2.7/site-packages/sitecustomize.py
 
-  - name: pip install pexpect,PyMySQL,superset
+  - name: pip install pexpect,PyMySQL
     pip:
       name: "{{ item }}"
       state: latest
     with_items:
       - pexpect
       - PyMySQL
-      - superset
+
+  - name: pip install superset
+    pip:
+      name: superset
+      version: "{{ superset_version }}"
 
   - name: fabmanager create-admin --app superset
     expect:
@@ -118,9 +122,9 @@
     - "vars/config.yml"
 
 # proxyを使用しない環境ではコメントアウト
-#  environment:
-#    https_proxy: "http://{{ local_proxy }}"
-#    http_proxy: "http://{{ local_proxy }}"
+  environment:
+    https_proxy: "http://{{ local_proxy }}"
+    http_proxy: "http://{{ local_proxy }}"
 
   tasks:
 
