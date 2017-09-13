@@ -1,3 +1,10 @@
+# 概要
+#  redashのイメージ作成
+# 説明
+#  設定ファイル(vars/config.yml)に記載されている、redashのイメージを作成する。
+# 実行コマンド
+#  ansible-playbook 002004_redash_image.yml -i hosts -l localhost,centos7 -vvv
+
 - hosts: dockerhost
   become: yes
 
@@ -11,6 +18,7 @@
 
   tasks:
 
+# OSイメージからコンテナを起動
   - name: Create a os container
     docker_container:
       name: "{{ item.image_name }}"
@@ -24,8 +32,6 @@
 #    when: item.image_name == 'centos7'
 
 - hosts: centos7
-#  become: yes
-#  connection: docker
   gather_facts: no
 
   vars_files:
@@ -37,6 +43,8 @@
 #    http_proxy: "http://{{ local_proxy }}"
 
   tasks:
+
+# 起動シェルのコピー
   - name: Copies files to remote locations
     copy:
       src: "{{ item.src }}"
@@ -45,11 +53,13 @@
     with_items:
       - { src: "files/redash/redash.sh", dest: "/usr/local/bin/redash.sh" }
 
+# redashのインストールの際にpythonのモジュールの展開等に使用する開発ツールのインストール
   - name: yum groupinstall
     yum:
       name: '@Development Tools'
       state: present
 
+# 動作に必要なパッケージのインストール
   - name: yum install
     yum:
       name: "{{ item }}"
@@ -76,6 +86,7 @@
       - redis
       - supervisor
 
+# redash用のOSユーザの作成
   - name: create redash user
     user:
       name: redash
@@ -83,6 +94,7 @@
       createhome: no
       shell: /sbin/nologin
 
+# redashをインストールするディレクトリの作成
   - name: create directory for redash_base_path
     file:
       path: "{{ redash_base_path }}"
@@ -90,6 +102,7 @@
       group: redash
       state: directory
 
+# ベースとなるredashの環境ファイルを取得
   - name: download redash env
     get_url:
       url: "{{ item.url }}"
@@ -99,9 +112,11 @@
     with_items:
       - { url: "{{ redash_files_base_url }}/env", dest: "{{ redash_base_path }}/.env" }
 
+# redashの環境ファイルにランダム文字列を設定
   - name: edit /opt/redash/.env 
     shell: echo "export REDASH_COOKIE_SECRET=`pwgen -1s 32`" >> /opt/redash/.env
 
+# redashのダウンロード
   - name: download redash source
     get_url:
       url: "{{ item.url }}"
@@ -109,6 +124,7 @@
     with_items:
       - { url: "{{ redash_latest_url }}", dest: "{{ redash_tarball }}" }
 
+# redashのバージョン番号でフォルダ作成
   - name: create directory for redash_version_dir 
     file:
       path: "{{ redash_version_dir }}"
@@ -116,21 +132,29 @@
       owner: redash
       group: redash
 
+# ダウンロードしたredashの展開
   - name: extract redash_tarball
     shell: sudo -u redash tar -C "{{ redash_version_dir }}" -xvf "{{ redash_tarball }}"
 
+# バージョン番号のディレクトリをcurrentとしてリンク作成
   - name: create link-1
     file:
       src: "{{ redash_version_dir }}"
       dest: "{{ redash_base_path }}/current"
       state: link
 
+# 作成した環境ファイルへのリンクを、currentに作成
   - name: create link-2
     file:
       src: "{{ redash_base_path }}/.env"
       dest: "{{ redash_base_path }}/current/.env"
       state: link
 
+# redashインストール時、pip,setuptools等のバージョンを新しくする必要がある。
+# CetnOS標準のパッケージ(pip)で、最新版をダウンロードしておいてから、
+# パッケージを削除、ダウンロードしたファイルのインストールを行う。
+
+# 作業ディレクトリの作成
   - name: create directory for python work
     file:
       path: "{{ item }}"
@@ -138,6 +162,7 @@
     with_items:
       - /tmp/pip
 
+# get-pipのダウンロード
   - name: download get-pip.py
     get_url:
       url: "{{ item.url }}"
@@ -145,6 +170,7 @@
     with_items:
       - { url: "https://bootstrap.pypa.io/get-pip.py", dest: "/tmp/pip/get-pip.py" }
 
+# pip等のダウンロード
   - name: pip download pip,setuptools,wheel
     pip:
       name: "{{ item }}"
@@ -155,6 +181,7 @@
       - setuptools
       - wheel
 
+# パッケージの削除
   - name: yum remove python2-pip,python-setuptools
     yum:
       name: "{{ item }}"
@@ -163,11 +190,13 @@
       - python2-pip
       - python-setuptools
 
+# pip等のインストール
   - name: pip install pip,setuptools,wheel
     shell: python get-pip.py
     args:
       chdir: /tmp/pip/
 
+# redashが必要とするPythonパッケージのインストール-1
   - name: pip install supervisor,setproctitle 
     pip:
       name: "{{ item }}"
@@ -176,6 +205,7 @@
       - supervisor
       - setproctitle
 
+# redashが必要とするPythonパッケージのインストール-2
   - name: pip install redash-requirements
     pip:
       requirements: "{{ item }}"
@@ -184,6 +214,7 @@
       - /opt/redash/current/requirements.txt
       - /opt/redash/current/requirements_dev.txt
 
+# postgresユーザの環境変数の設定
   - name: Copies files to remote locations(.bash_profile)
     become: yes
     become_user: postgres
@@ -193,6 +224,7 @@
     with_items:
       - { src: "files/redash/.bash_profile", dest: "/var/lib/pgsql/.bash_profile" }
  
+# SCLからインストールしたパッケージを常時有効化するための設定
   - name: Copies files to remote locations(scl.sh)
     copy:
       src: "{{ item.src }}"
@@ -200,11 +232,13 @@
     with_items:
      - { src: "files/redash/scl.sh", dest: "/etc/profile.d/scl.sh" }
 
+# postgresqlの初期化
   - name: postgresql initdb
     become: yes
     become_user: postgres
     shell: initdb
- 
+
+# postgresqlのログディレクトリの作成 
   - name: create directory for postgresql log
     file:
       path: "{{ item }}"
@@ -214,23 +248,29 @@
     with_items:
       - /var/log/pgsql
 
+# postgresqlの起動 
   - name: start postgresql
     shell: su - postgres -c '/opt/rh/rh-postgresql95/root/usr/libexec/postgresql-ctl start -D ${PGDATA} -s -w -t ${PGSTARTTIMEOUT}'
 
+# postgresqlにredash用のユーザ作成
   - name: Create postgresql user
     shell: sudo -u postgres createuser redash --no-superuser --no-createdb --no-createrole
 
+# postgresqlにredash用のデータベース作成
   - name: Create postgresql database
     shell: sudo -u postgres createdb redash --owner=redash
 
+# redisの起動
   - name: start redis
     shell: sudo -u redis /usr/bin/redis-server /etc/redis.conf --daemonize no &
 
+# redisにredash用のデータベース作成
   - name: create redis database
     shell: sudo -u redash bin/run ./manage.py database create_tables
     args:
       chdir: /opt/redash/current
 
+# superset用のディレクトリ作成
   - name: create directory for superset
     file:
       path: "{{ item }}"
@@ -238,6 +278,7 @@
     with_items:
       - /etc/supervisor/conf.d
 
+# redashの設定ファイル、nginxのサンプル設定ファイルのダウンロード
   - name: download redash.conf,nginx_redash_site
     get_url:
       url: "{{ item.url }}"
@@ -246,14 +287,17 @@
       - { url: "{{ redash_files_base_url }}/supervisord.conf", dest: "/etc/supervisor/conf.d/redash.conf" }
       - { url: "{{ redash_files_base_url }}/nginx_redash_site", dest: "/etc/nginx/nginx_redash_site" }
 
+# nginxのデフォルトの設定ファイルのバックアップ確認
   - name: /etc/nginx/nginx.conf check
     stat: path=/etc/nginx/nginx.conf.org
     register: foo_stat
 
+# バックアップがない場合はバックアップ（移動）
   - name: Move nginx.conf to nginx.conf.org
     command: mv /etc/nginx/nginx.conf /etc/nginx/nginx.conf.org
     when: not foo_stat.stat.exists
 
+# nginxの設定ファイル、nginxのセキュリティ用の設定ファイルのコピー
   - name: Copies files to remote locations
     copy:
       src: "{{ item.src }}"
@@ -262,9 +306,11 @@
       - { src: "files/redash/nginx.conf", dest: "/etc/nginx/nginx.conf" }
       - { src: "files/redash/default.conf", dest: "/etc/nginx/conf.d/default.conf" }
 
+# redashの初期データ（postgresql）のバックアップ
   - name: copy postgresql datadir
     shell: cp -pr /var/opt/rh/rh-postgresql95/lib/pgsql/data/ /root/
 
+# redashの初期データ（ログ）のバックアップ
   - name: copy log dir
     shell: cp -pr /var/log/ /root/
 
@@ -281,22 +327,26 @@
 
   tasks:
 
+# コンテナを停止
   - name: Stop base_os container
     docker_container:
       name: "{{ item.image_name }}"
       state: stopped
     with_items: "{{ images }}"
 
+# 不要なイメージがあった場合に削除
   - name: absent base_os image
     docker_image:
       name: "{{ item.image_name }}:{{ item.image_tag }}"
       state: absent
     with_items: "{{ redash }}"
 
+# 作成したコンテナからイメージを作成
   - name: docker commit
     shell: docker commit "{{ item.base_os_name }}" "{{ item.image_name }}:{{ item.image_tag }}"
     with_items: "{{ redash }}"
 
+# コンテナを削除
   - name: absent base_os container
     docker_container:
       name: "{{ item.image_name }}"

@@ -1,3 +1,10 @@
+# 概要
+#  開発・メンテナンス環境のdockerの設定
+# 説明
+#  001001_os.ymlでＯＳ設定完了後、dockerの設定を行う。
+# 実行コマンド
+#  ansible-playbook 001002_docker.yml -i hosts -vvv
+
 - hosts: dockerhost
   become: yes
 
@@ -11,6 +18,7 @@
   
   tasks:
 
+# dockerのインストール。ansibleでdockerを操作するためのpythonモジュールもインストール。
   - name: yum install docker
     yum:
       name: "{{ item }}"
@@ -21,37 +29,25 @@
       - python-docker-py
       - python-docker-pycreds
 
+# Proxy環境下でコンテナイメージを取得する際に設定。Proxyがない場合はコメントアウト
 #  - name: set proxy to docker
 #    lineinfile:
 #      path: /lib/systemd/system/docker.service
 #      insertbefore: ".*ExecStart.*"
-#      line: "Environment=\"http_proxy=http://127.0.0.1:3128\""
+#      line: "Environment=\"http_proxy=http://{{ local_proxy }}\""
 
-#  - name: systemd demon reload
-#    shell: systemctl daemon-reload
+# 変更したdockerの設定ファイルの読み込み
+  - name: systemd demon reload
+    shell: systemctl daemon-reload
 
+# dockerの起動、自動起動設定
   - name: restart docker
     service:
       name: docker
       state: restarted
       enabled: yes
 
-#  - name: create directory for python modules
-#    file:
-#      path: "{{ pydir }}"
-#      state: directory
-
-#  - name: pip install docker-py,pexpect,bigsuds,f5-sdk
-#    pip:
-#      name: "{{ item }}"
-#      extra_args: "--prefix {{ pydir }}"
-#      state: latest
-#    with_items:
-#      - docker-py
-#      - pexpect
-#      - bigsuds
-#      - f5-sdk
-
+# dockerの独自ネットワークの作成
   - name: create a network with options
     docker_network:
       name: "{{ network_name }}"
@@ -62,6 +58,7 @@
       driver_options:
         com.docker.network.bridge.name: "{{ network_name }}"
 
+# コンテナからホストへの通信をブロックしない設定を動的に追加
   - name: allow access from container to host
     iptables:
       action: insert
@@ -71,6 +68,7 @@
     with_items:
       "{{ local_net }}"
 
+# 上記ルールを永続的にする設定追加
   - name: set rule to iptables
     lineinfile:
       dest: "/etc/sysconfig/iptables"
@@ -78,10 +76,4 @@
       line: "-A INPUT -s {{ item }} -j ACCEPT"
     with_items:
       "{{ local_net }}"
-
-#  - name: restart docker
-#    service:
-#      name: docker
-#      state: restarted
-#      enabled: yes
 

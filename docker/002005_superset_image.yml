@@ -1,3 +1,10 @@
+# 概要
+#  supersetのイメージ作成
+# 説明
+#  設定ファイル(vars/config.yml)に記載されている、supersetのイメージを作成する。
+# 実行コマンド
+#  ansible-playbook 002005_superset_image.yml -i hosts -l localhost,centos7 -vvv
+
 - hosts: dockerhost
   become: yes
 
@@ -11,6 +18,7 @@
 
   tasks:
 
+# OSイメージからコンテナを起動
   - name: Create a os container
     docker_container:
       name: "{{ item.image_name }}"
@@ -24,8 +32,6 @@
 #    when: item.image_name == 'centos7'
 
 - hosts: centos7
-#  become: yes
-#  connection: docker
   gather_facts: no
 
   vars_files:
@@ -37,6 +43,8 @@
 #    http_proxy: "http://{{ local_proxy }}"
 
   tasks:
+
+# 起動シェルのコピー
   - name: Copies files to remote locations
     copy:
       src: "{{ item.src }}"
@@ -45,6 +53,7 @@
     with_items:
       - { src: "files/superset/superset.sh", dest: "/usr/local/bin/superset.sh" }
 
+# 動作に必要なパッケージのインストール
   - name: yum install
     yum:
       name: "{{ item }}"
@@ -64,6 +73,7 @@
       - python-psycopg2
       - MySQL-python
 
+# pythonのデフォルトエンコーディングをutf8に変更
   - name: set sys.setdefaultencoding to sitecustomize.py
     blockinfile:
       dest: "{{ item }}"
@@ -75,6 +85,8 @@
       - /usr/lib/python2.7/site-packages/sitecustomize.py
       - /usr/lib64/python2.7/site-packages/sitecustomize.py
 
+# OpenAudITの対話式インストーラに対応するため、ansibleのモジュールで必要とするパッケージのインストール。
+# mysqlの接続用モジュールのインストール
   - name: pip install pexpect,PyMySQL
     pip:
       name: "{{ item }}"
@@ -83,11 +95,13 @@
       - pexpect
       - PyMySQL
 
+# supersetのインストール（バージョン指定）
   - name: pip install superset
     pip:
       name: superset
       version: "{{ superset_version }}"
 
+# sqliteにアカウント作成
   - name: fabmanager create-admin --app superset
     expect:
       command: "fabmanager create-admin --app superset"
@@ -100,18 +114,23 @@
         (Repeat.for.confirmation.*:.): "{{ superset_user.password }}"
       timeout: 30
 
+# supersetのDBアップデート
   - name: superset db upgrade
     shell: superset db upgrade
 
+# supersetのサンプルロード
   - name: superset load_examples
     shell: superset load_examples
 
+# supersetの初期設定
   - name: superset init
     shell: superset init
 
+# supersetの初期データ(sqlite）のバックアップ
   - name: copy superset datadir
     shell: cp -pr /root/.superset /root/superset
 
+# supersetの初期データ(ログ）のバックアップ
   - name: copy log dir
     shell: cp -pr /var/log/ /root/
 
@@ -128,22 +147,26 @@
 
   tasks:
 
+# コンテナを停止
   - name: Stop base_os container
     docker_container:
       name: "{{ item.image_name }}"
       state: stopped
     with_items: "{{ images }}"
 
+# 不要なイメージがあった場合に削除
   - name: absent base_os image
     docker_image:
       name: "{{ item.image_name }}:{{ item.image_tag }}"
       state: absent
     with_items: "{{ superset }}"
 
+# 作成したコンテナからイメージを作成
   - name: docker commit
     shell: docker commit "{{ item.base_os_name }}" "{{ item.image_name }}:{{ item.image_tag }}"
     with_items: "{{ superset }}"
 
+# コンテナを削除
   - name: absent base_os container
     docker_container:
       name: "{{ item.image_name }}"

@@ -1,3 +1,11 @@
+# 概要
+#  OpenAduITのイメージ作成
+# 説明
+#  設定ファイル(vars/config.yml)に記載されている、OpenAduITのイメージを作成する。
+#  CentOSC6で作成する。CentOS7での構築手順は未検証
+# 実行コマンド
+#  ansible-playbook 002003_openaudit_image.yml -i hosts -l localhost,centos6 -vvv
+
 - hosts: dockerhost
   become: yes
 
@@ -11,6 +19,7 @@
 
   tasks:
 
+# OSイメージからコンテナを起動
   - name: Create a os container
     docker_container:
       name: "{{ item.image_name }}"
@@ -21,11 +30,8 @@
           ipv4_address: "{{ item.ip }}"
       purge_networks: yes
     with_items: "{{ images }}"
-#    when: item.image_name == 'centos6'
 
 - hosts: centos
-#  become: yes
-#  connection: docker
   gather_facts: no
 
   vars_files:
@@ -37,6 +43,8 @@
 #    http_proxy: "http://{{ local_proxy }}"
 
   tasks:
+
+# 必要なパッケージのインストール
   - name: yum install
     yum:
       name: "{{ item }}"
@@ -68,6 +76,7 @@
       - MySQL-python 
     when: inventory_hostname == 'centos6'
 
+# 必要なパッケージのインストール(centos7)
   - name: yum install
     yum:
       name: "{{ item }}"
@@ -100,6 +109,7 @@
       - perl-Time-modules
     when: inventory_hostname == 'centos7'
 
+# OpenAudITの対話式インストーラに対応するため、ansibleのモジュールで必要とするパッケージのインストール。
   - name: pip install pexpect
     pip:
       name: "{{ item }}"
@@ -107,30 +117,27 @@
     with_items:
       - pexpect
 
-#  - name: Copies files to remote locations
-#    copy:
-#      src: "{{ item.src }}"
-#      dest: "{{ item.dest }}"
-#      mode: u=rwx,g=r,o=r
-#    with_items:
-#      - { src: "files/openaudit/{{ openaudit_install_file }}", dest: "/root/{{ openaudit_install_file }}" }
-
+# Apacheのデフォルトページの設定無効化の確認
   - name: /etc/httpd/conf.d/welcome.conf check
     stat: path=/etc/httpd/conf.d/welcome.conf.org
     register: foo_stat
 
+# 無効化していない場合、ファイル名変更で無効化
   - name: Move welcome.conf to welcome.conf.org
     command: mv /etc/httpd/conf.d/welcome.conf /etc/httpd/conf.d/welcome.conf.org
     when: not foo_stat.stat.exists
 
+# Apacheのデフォルトの設定ファイルのバックアップ確認
   - name: /etc/httpd/conf/httpd.conf check
     stat: path=/etc/httpd/conf/httpd.conf.org
     register: foo_stat
 
+# バックアップがない場合はバックアップ（移動）
   - name: Move httpd.conf to httpd.conf.org
     command: mv /etc/httpd/conf/httpd.conf /etc/httpd/conf/httpd.conf.org
     when: not foo_stat.stat.exists
 
+# 起動シェル、Apacheの設定ファイル、Apacheのセキュリティ用の設定ファイルのコピー
   - name: Copies files to remote locations
     copy:
       src: "{{ item.src }}"
@@ -142,6 +149,7 @@
       - { src: "files/openaudit/security.conf", dest: "/etc/httpd/conf.d/security.conf" }
     when: inventory_hostname == 'centos6'
 
+# 起動シェル、Apacheの設定ファイル、Apacheのセキュリティ用の設定ファイルのコピー（CentOS7用）
   - name: Copies files to remote locations
     copy:
       src: "{{ item.src }}"
@@ -153,32 +161,40 @@
       - { src: "files/openaudit/security.conf", dest: "/etc/httpd/conf.d/security.conf" }
     when: inventory_hostname == 'centos7'
 
+# MySQLの起動、自動起動設定
   - name: start mysqld
     service:
       name: mysqld
       state: started
     when: inventory_hostname == 'centos6'
 
+# MySQL(MariaDB)の初期設定 (CentOS7)
   - name: init mysql
     shell: /usr/bin/mysql_install_db
     when: inventory_hostname == 'centos7'
 
-  - name: init mysql
+# MySQL(MariaDB)で使用するフォルダの権限変更 (CentOS7)
+  - name: Change file permissions (/var/lib/mysql)
     shell: chown mysql:mysql /var/lib/mysql -R
     when: inventory_hostname == 'centos7'
 
+# MySQL(MariaDB)の起動 (CentOS7)
   - name: start mysqld
     shell: /usr/bin/mysqld_safe --datadir='/var/lib/mysql' &
     when: inventory_hostname == 'centos7'
 
+# OpenAudITのデータを外部から参照するためのユーザ作成
   - name: mysql user
     shell: echo "grant select on openaudit.* to 'openauditview'@'%' identified by '{{ openaudit_mysql_pass }}' with grant option" | mysql 
  
+# MySQLのrootユーザのパスワード設定
   - mysql_user:
       name: root
       password: "{{ openaudit_mysql_pass }}"
     ignore_errors: True 
 
+# デフォルトで動作しているが、もし日本語で化けることがあったら、
+# 以下のように、DBの文字コードの設定が必要かも。
 #  - name: edit /etc/my.cnf
 #    lineinfile:
 #      path: /etc/my.cnf
@@ -210,6 +226,7 @@
 #    shell: /usr/bin/mysqld_safe --datadir='/var/lib/mysql' &
 #    when: inventory_hostname == 'centos7'
 
+# OpenAudIT推奨値、セキュリティ(expose_php)、エラーログ(error_log)の設定ために、一旦コメントアウト
   - name: edit php.ini(comment out)
     replace:
       path: '/etc/php.ini'
@@ -226,6 +243,7 @@
       - 'expose_php'
       - 'error_log'
 
+# OpenAudIT推奨値、セキュリティ(expose_php)、エラーログ(error_log)の設定
   - name: edit php.ini
     lineinfile:
       path: '/etc/php.ini'
@@ -242,6 +260,7 @@
       - { name: 'expose_php'         , value: 'expose_php = Off'           }
       - { name: 'error_log'          , value: 'error_log = /var/log/php/php_error.log' }
 
+# PHPのエラーログの出力先作成
   - name: create directory for php
     file:
       path: "{{ item }}"
@@ -251,17 +270,20 @@
     with_items:
       - /var/log/php
 
+# OpenAudITのインストーラのダウンロード
   - name: download openaudit_install_file
     get_url:
       url: http://dl-openaudit.opmantek.com/{{ openaudit_install_file }}
       dest: /root/{{ openaudit_install_file }}
 
+# OpenAudITのインストーラに実行権限の付与
   - name: chmod +x openaudit_install_file
     file:
       path: "/root/{{ openaudit_install_file }}"
       mode: "a+x"
       state: file
 
+# OpenAudITのインストーラの実行（対話式）。デフォルト＋MySQLのパスワードを設定。
   - name: openaudit install
     expect:
       command: "/root/{{ openaudit_install_file }}"
@@ -271,18 +293,21 @@
         "Enter the MySQL root user's password: ": "{{ openaudit_mysql_pass }}"
       timeout: 600
 
+# DB接続情報の編集
   - name: edit database.php
     replace:
       path: "/usr/local/open-audit/code_igniter/application/config/database.php"
       regexp: "localhost"
       replace: "127.0.0.1"
 
+# DB接続情報の編集
   - name: edit database.php -2
     replace:
       path: "/usr/local/open-audit/code_igniter/application/config/database.php"
       regexp: "openauditpassword"
       replace: "{{ openaudit_mysql_pass }}"
 
+# openauditで作成されたDBユーザのパスワード変更
   - name: change openaudit database password
     mysql_user:
       login_user: root
@@ -292,54 +317,11 @@
       password: "{{ openaudit_mysql_pass }}"
       state: present
 
-  - name: copy audit scripts
-    shell: cp -pr /usr/local/open-audit/other /var/www/html/
-
-  - name: file list (/var/www/html/other/*.sh)
-    shell: 'find /var/www/html/other/ -maxdepth 1 -type f -name "*.sh"'
-    register: filelist
-    changed_when: false
-
-  - name: edit /var/www/html/other/*.sh
-    replace:
-      path: "{{ item }}"
-      regexp: "http://localhost"
-      replace: "http://{{ host_ip }}:{{ openaudit_port }}"
-    with_items: "{{ filelist.stdout_lines }}"
-
-  - name: edit /var/www/html/other/*.sh
-    replace:
-      path: "{{ item }}"
-      regexp: 'submit_online="n"'
-      replace: 'submit_online="y"'
-    with_items: "{{ filelist.stdout_lines }}"
-
-  - name: edit /var/www/html/other/*.sh
-    replace:
-      path: "{{ item }}"
-      regexp: 'create_file="y"'
-      replace: 'create_file="n"'
-    with_items: "{{ filelist.stdout_lines }}"
-
-#  - name: file list (/var/www/html/other/*.sh)
-#    shell: 'find /var/www/html/other/ -maxdepth 1 -type f -name "*.vbs"'
-#    register: filelist
-#    changed_when: false
-
-# Part of VBS is other than UTF 8.
-# 'replace' corresponds only to UTF 8 character code.
-# Replace with sed.
-  - name: edit /var/www/html/other/*.vbs
-    shell: sed -i -e 's/http\:\/\/localhost/http\:\/\/{{ host_ip }}:8000/g' /var/www/html/other/*.vbs
-#    replace:
-#      path: "{{ item }}"
-#      regexp: "http://localhost"
-#      replace: "http://{{ host_ip }}:{{ openaudit_port }}"
-#    with_items: "{{ filelist.stdout_lines }}"
- 
+# OpenAudITの初期データ（MySQL）のバックアップ
   - name: copy mysql datadir
     shell: cp -pr /var/lib/mysql/ /root/
 
+# OpenAudITの初期データ（ログ）のバックアップ
   - name: copy log dir
     shell: cp -pr /var/log/ /root/
 
@@ -356,22 +338,26 @@
 
   tasks:
 
+# コンテナを停止
   - name: Stop base_os container
     docker_container:
       name: "{{ item.image_name }}"
       state: stopped
     with_items: "{{ images }}"
 
+# 不要なイメージがあった場合に削除
   - name: absent base_os image
     docker_image:
       name: "{{ item.image_name }}:{{ item.image_tag }}"
       state: absent
     with_items: "{{ openaudit }}"
 
+# 作成したコンテナからイメージを作成
   - name: docker commit
     shell: docker commit "{{ item.base_os_name }}" "{{ item.image_name }}:{{ item.image_tag }}"
     with_items: "{{ openaudit }}"
 
+# コンテナを削除
   - name: absent base_os container
     docker_container:
       name: "{{ item.image_name }}"

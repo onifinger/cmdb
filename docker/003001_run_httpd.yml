@@ -1,3 +1,10 @@
+# 概要
+#  ホストにＷｅｂサーバ（Apache）を起動
+# 説明
+#  ホストにＷｅｂサーバ（Apache）を起動
+# 実行コマンド
+#  ansible-playbook 003001_run_httpd.yml -i hosts -l localhost -vvv
+
 - hosts: dockerhost
   become: yes
 

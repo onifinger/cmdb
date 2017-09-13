@@ -1,3 +1,10 @@
+# 概要
+#  開発・メンテナンス環境のＯＳ設定
+# 説明
+#  CentOS7.3.1611の最小構成＋ansible,gitがインストールされた環境に対して、開発・メンテナンス環境に必要な設定変更を行う。
+# 実行コマンド
+#  ansible-playbook 001001_os.yml -i hosts -vvv
+
 - hosts: dockerhost
   become: yes
 
@@ -10,6 +17,9 @@
 #    http_proxy: "http://{{ local_proxy }}"
 
   tasks:
+
+# 環境維持のために使用するツール類のインストール（bridge-utils,net-tools等）
+
   - name: yum install additioanl packages
     yum:
       name: "{{ item }}"
@@ -17,116 +27,54 @@
     with_items:
       - "{{ pkgs }}"
 
+# ホスト名の設定
   - name: hostname
     hostname:
       name: "{{ host_name }}"
 
-#  - name: Setting environment variables
-#    blockinfile:
-#      dest: "/etc/profile.d/ansible_python.sh"
-#      create: yes
-#      block: |
-#        http_proxy=http://127.0.0.1:3128
-#        export http_proxy
-#        https_proxy=http://127.0.0.1:3128
-#        export https_proxy
-#        PATH={{ pydir }}/bin:$PATH
-#        PYTHONPATH={{ pypath }}:$PYTHONPATH
-#        export PYTHONPATH
-
+# SELINUXの無効化
   - name: disabled selinux
     selinux: state=disabled
 
+# firewalldの停止（iptables-servicesで運用するため）
   - name: stop/disabled firewalld
     service:
       name: firewalld
       state: stopped
       enabled: no
 
+# iptablesをサービス化するパッケージのインストール(iptables本体は最小構成でインストール済み）
   - name: yum install iptables
     yum:
       name: iptables-services
       state: latest
 
+# iptablesのサービス起動、自動起動設定
   - name: start iptables
     service:
       name: iptables
       state: started
       enabled: yes
 
+# sudoで実行したときに、切り替え先ユーザの環境変数を読み込む設定(-i)追加
   - name: set "sudo_flags" to ansible.cfg
     lineinfile:
       dest: "/etc/ansible/ansible.cfg"
       insertafter: "^#sudo_flags"
       line: "sudo_flags = -H -S -n -i"
 
+# SSHの鍵情報変更による接続不可を回避する設定を追加
+#  SSHで接続先の鍵が変更されていても無視して接続(StrictHostKeyChecking)
+#  SSHの接続先の鍵を自動保存しない(UserKnownHostsFile)
   - name: set "ssh_args" to ansible.cfg
     lineinfile:
       dest: "/etc/ansible/ansible.cfg"
       insertafter: "^#ssh_args"
       line: "ssh_args = -o ControlMaster=auto -o ControlPersist=60s -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
 
+# ansibleで実行ログを出力する設定
   - name: set "log_path" to ansible.cfg
     lineinfile:
       dest: "/etc/ansible/ansible.cfg"
       insertafter: "^#log_path"
       line: "log_path = /var/log/ansible.log"
-
-  - name: Change authority of ansible.log
-    file:
-      path: /var/log/ansible.log
-      state: touch
-      mode: "0666"
-
-#  - name: yum install unbound
-#    yum:
-#      name: "{{ item }}"
-#      state: latest
-#    with_items:
-#      - unbound
-#      - NetworkManager-glib
-
-#  - name: initialize local-zone,forward-zone to unbound
-#    file:
-#      path: "{{ item }}"
-#      state: absent
-#    with_items:
-#      - /etc/unbound/local.d/local-zone.conf
-#      - /etc/unbound/conf.d/forward-zone.conf
-
-#  - name: Setting environment variables to unbound(local-zone)
-#    lineinfile:
-#      dest: "/etc/unbound/local.d/local-zone.conf"
-#      create: yes
-#      line: "{{ item }}"
-#    with_items:
-#        "{{ local_server }}"
-
-#  - name: Setting environment variables to unbound(forward-zone)
-#    lineinfile:
-#      dest: "/etc/unbound/conf.d/forward-zone.conf"
-#      create: yes
-#      line: "{{ item }}"
-#    with_items:
-#        "{{ forward_zone }}"
-#    when: forward_zone is defined
-
-#  - name: restart unbound
-#    service:
-#      name: unbound
-#      state: restarted
-#      enabled: yes
-
-#  - name: Setting DNS Server to resolve.conf
-#    nmcli:
-#      conn_name: "{{ nic_interface }}"
-#      type: ethernet
-#      dns4: "{{ host_ip }}"
-#      state: present
-
-#  - name: restart NetworkManager
-#    service:
-#      name: NetworkManager
-#      state: restarted
-#      enabled: yes
-

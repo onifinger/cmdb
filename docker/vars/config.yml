@@ -1,27 +1,23 @@
-# 基本ディレクトリ
-base_dir: /root/work/cmdb
-
-# docker imageのあるディレクトリ
-images_dir: "{{ base_dir }}/images"
-
 # 内部で使用するドメイン名
 local_zone: ypro.local
 
 # ホスト名
 host_name: "cmdb.{{ local_zone }}"
 
+# 基本ディレクトリ
+base_dir: /root/work/cmdb
+
+# docker imageのあるディレクトリ
+images_dir: "{{ base_dir }}/images"
+
 # ホストのIPアドレス
-host_ip: 172.23.141.62
-#host_ip: 192.168.56.4
+host_ip: 172.23.141.73
 
-# ホストのインターフェイスカードの名前
-nic_interface: ens32
-#nic_interface: enp0s3
-
-# localのProxy
+# インターネットに直接アクセスできるときはコメントアウト。Proxyが必要な時は接続情報を設定。
 #local_proxy: "user:password@ip:port"
+#local_proxy: "ip:port"
 
-# dockerで使用するIPアドレス帯域（デフォルトと、使いする独自ネットワーク）
+# dockerで使用するIPアドレス帯域（デフォルトネットワークと、追加する独自ネットワーク）
 default_bridge: 172.17.0.0/16
 original_bridge: 192.168.10.0/24
 
@@ -35,38 +31,6 @@ network_name: bridge2
 subnet: "{{ original_bridge }}"
 gateway: 192.168.10.1
 iprange: 192.168.10.64/26
-
-# ローカルＤＮＳサーバ（unbound）で使用する、server設定
-local_server:
-  - '    interface: "{{ host_ip }}"'
-  - '    access-control: 10.0.0.0/8 allow'
-  - '    access-control: 172.16.0.0/12 allow'
-  - '    access-control: 192.168.0.0/16 allow'
-  - '    access-control: 127.0.0.0/8 allow'
-  - '    do-ip6: no'
-  - '    local-zone: "{{ local_zone }}." static'
-  - '    local-data: "IN NS cmdb.{{ local_zone }}."'
-  - '    local-data: "IN MX 10 cmdb.{{ local_zone }}."'
-  - '    local-data: "cmdb.{{ local_zone }}. IN A {{ host_ip }}"'
-  - '    local-data-ptr: "{{ host_ip }} cmdb.{{ local_zone }}."'
-  - '    val-permissive-mode: yes'
-
-# ローカルＤＮＳサーバ（unbound）で使用する、外部ＤＮＳサーバの設定。
-# 外部DNSサーバが無い場合は"forward_zone:"の定義ごとコメントアウト
-forward_zone:
-  - 'forward-zone:'
-  - '     name: "."'
-#  - '     forward-addr: 192.168.56.2'
-  - '     forward-addr: 172.23.1.18'
-  - '     forward-addr: 172.23.1.17'
- 
-# Pythonモジュールをインストールするディレクトリ
-pydir: /opt/ansible_python
-pypath: "{{ pydir }}/lib/python2.7/site-packages"
-
-# ansibleユーザ
-users:
-  - { name: 'ansibleuser', password: "{{ 'password'|password_hash('sha512')}}" , uid: '601' }
 
 # 運用で役に立つパッケージの追加（ansible,gitは最初に手動でインストールするので除く）
 pkgs:

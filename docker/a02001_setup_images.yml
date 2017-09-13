@@ -1,3 +1,10 @@
+# 概要
+#  コンテナイメージのロード
+# 説明
+#  コンテナのイメージをロードする
+# 実行コマンド
+#  ansible-playbook a02001_setup_images.yml -i hosts -vvv
+
 - hosts: dockerhost
   become: yes
 

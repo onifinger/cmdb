@@ -1,3 +1,10 @@
+# 概要
+#  コンテナ実行環境の設定
+# 説明
+#  CentOS7.3.1611の最小構成で、docker,ansible等の必要なパッケージ(RPM)がインストール済みの環境で、コンテナの実行環境の設定を行う。
+# 実行コマンド
+#  ansible-playbook a01001_setup_docker.yml -i hosts -vvv
+
 - hosts: dockerhost
   become: yes
 

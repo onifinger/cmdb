@@ -1,3 +1,10 @@
+# 概要
+#  ベースとなるOSのイメージ作成
+# 説明
+#  設定ファイル(vars/config.yml)に記載されている、OSのイメージを作成する。
+# 実行コマンド
+#  ansible-playbook 002001_os_image.yml -i hosts -l localhost,centos -vvv
+
 - hosts: dockerhost
   become: yes
 
@@ -10,11 +17,14 @@
 #    http_proxy: "http://{{ local_proxy }}"
 
   tasks:
+
+# Docker HubからCentOSの公式イメージを取得
   - name: docker pull os_image
     docker_image:
       name: "{{ item.base_os_name }}:{{ item.base_os_tag }}"
     with_items: "{{ images }}"
 
+# イメージからコンテナを起動
   - name: Create a os container
     docker_container:
       name: "{{ item.image_name }}"
@@ -26,9 +36,8 @@
       purge_networks: yes
     with_items: "{{ images }}"
 
+# 起動したcentosのコンテナに対して変更を行う
 - hosts: centos
-#  become: yes
-#  connection: docker
   gather_facts: no
 
   vars_files:
@@ -40,33 +49,22 @@
 #    http_proxy: "http://{{ local_proxy }}"
 
   tasks:
+
+# ベースリポジトリサーバを日本(ftp.riken.jp)に固定するため、mirrolistをコメントアウト。
   - name: edit yum.repos.d(base mirrorlist)
     replace:
       path: '/etc/yum.repos.d/CentOS-Base.repo'
       regexp: '^(mirrorlist=http://mirrorlist.centos.org.*)$'
       replace: '#\1'
 
+# ベースリポジトリサーバを日本(ftp.riken.jp)に変更する。
   - name: edit yum.repos.d(base baseurl)
     replace:
       path: '/etc/yum.repos.d/CentOS-Base.repo'
       regexp: '^#(baseurl=http://)(mirror.centos.org)(.*)$'
       replace: '\1ftp.riken.jp/Linux\3'
 
-#  - name: Setting environment variables(proxy)
-#    blockinfile:
-#      dest: "/etc/profile.d/proxy.sh"
-#      create: yes
-#      block: |
-#        http_proxy=http://{{ gateway }}:3128
-#        export http_proxy
-#        https_proxy=http://{{ gateway }}:3128
-#        export https_proxy
-
-#  - name: set proxy to yum
-#    lineinfile:
-#      path: /etc/yum.conf
-#      line: "proxy=http://{{ gateway }}:3128"
-
+# SCLのリポジトリを追加
   - name: yum install centos-release-scl
     yum:
       name: "{{ item }}"
@@ -74,18 +72,21 @@
     with_items:
       - centos-release-scl
       
+# SCLのベースリポジトリサーバを日本(ftp.riken.jp)に変更する。
   - name: edit yum.repos.d(centos-sclo-rh)
     replace:
       path: '/etc/yum.repos.d/CentOS-SCLo-scl-rh.repo'
       regexp: '^(baseurl=http://)(mirror.centos.org)(.*)$'
       replace: '\1ftp.riken.jp/Linux\3'
 
+# SCLのベースリポジトリサーバを日本(ftp.riken.jp)に変更する。
   - name: edit yum.repos.d(centos-sclo)
     replace:
       path: '/etc/yum.repos.d/CentOS-SCLo-scl.repo'
       regexp: '^(baseurl=http://)(mirror.centos.org)(.*)$'
       replace: '\1ftp.riken.jp/Linux\3'
 
+# EPELのリポジトリを追加
   - name: yum install epel-release
     yum:
       name: "{{ item }}"
@@ -93,18 +94,21 @@
     with_items:
       - epel-release
 
+# EPELのベースリポジトリサーバを日本(ftp.riken.jp)に固定するため、mirrolistをコメントアウト。
   - name: edit yum.repos.d(epel mirrorlist)
     replace:
       path: '/etc/yum.repos.d/epel.repo'
       regexp: '^(mirrorlist=https://mirrors.fedoraproject.org.*)$'
       replace: '#\1'
 
+# EPELのベースリポジトリサーバを日本(ftp.riken.jp)に変更する。
   - name: edit yum.repos.d(epel baseurl)
     replace:
       path: '/etc/yum.repos.d/epel.repo'
       regexp: '^#(baseurl=http://)(download.fedoraproject.org/pub/)(.*)$'
       replace: '\1ftp.riken.jp/Linux/fedora/\3'
 
+# マイナーバージョンリリース時のパッケージを最新状態までアップデート
   - name: yum update
     yum:
       name: "*"
@@ -117,22 +121,26 @@
     - "vars/config.yml"
 
   tasks:
+# コンテナを停止
   - name: Stop base_os container
     docker_container:
       name: "{{ item.image_name }}"
       state: stopped
     with_items: "{{ images }}"
 
+# 不要なイメージがあった場合に削除
   - name: absent base_os image
     docker_image:
       name: "{{ item.image_name }}:{{ item.image_tag }}"
       state: absent
     with_items: "{{ images }}"
 
+# 作成したコンテナからイメージを作成
   - name: docker commit
     shell: docker commit "{{ item.image_name }}" "{{ item.image_name }}:{{ item.image_tag }}"
     with_items: "{{ images }}"
 
+# コンテナを削除
   - name: absent base_os container
     docker_container:
       name: "{{ item.image_name }}"

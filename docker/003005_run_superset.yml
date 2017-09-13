@@ -1,3 +1,10 @@
+# 概要
+# supersetのコンテナ作成
+# 説明
+#  設定ファイル(vars/config.yml)に記載されている、sepersetのコンテナを作成する。
+# 実行コマンド
+#  ansible-playbook 003005_run_superset.yml -i hosts -l localhost -vvv
+
 - hosts: dockerhost
   become: yes
 
@@ -11,6 +18,7 @@
       name: "{{ item.image_name }}"
       image: "{{ item.image_name }}:{{ item.image_tag }}"
       hostname: "{{ item.image_name }}"
+      restart_policy: always
       networks:
         - name: "{{ network_name }}"
           ipv4_address: "{{ item.ip }}"

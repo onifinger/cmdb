@@ -1,15 +1,24 @@
+# 概要
+#  yumリポジトリサーバのイメージ作成
+# 説明
+#  設定ファイル(vars/config.yml)に記載されている、yumのリポジトリサーバのイメージを作成する。
+# 実行コマンド
+#  ansible-playbook 002002_yumrepo_image.yml -i hosts -l localhost,centos -vvv
+
 - hosts: dockerhost
   become: yes
 
   vars_files:
     - "vars/config.yml"
 
+# proxyを使用しない環境ではコメントアウト
 #  environment:
-    https_proxy: "http://{{ local_proxy }}"
-    http_proxy: "http://{{ local_proxy }}"
+#    https_proxy: "http://{{ local_proxy }}"
+#    http_proxy: "http://{{ local_proxy }}"
 
   tasks:
 
+# OSイメージからコンテナを起動
   - name: Create a os container
     docker_container:
       name: "{{ item.image_name }}"
@@ -22,8 +31,6 @@
     with_items: "{{ images }}"
 
 - hosts: centos
-#  become: yes
-#  connection: docker
   gather_facts: no
 
   vars_files:
@@ -31,6 +38,7 @@
 
   tasks:
 
+# yumリポジトリサーバに必要なパッケージのインストール
   - name: yum install yum-utils createrepo
     yum:
       name: "{{ item }}"
@@ -47,22 +55,26 @@
 
   tasks:
 
+# コンテナを停止
   - name: Stop base_os container
     docker_container:
       name: "{{ item.base_os_name }}"
       state: stopped
     with_items: "{{ yum_repo }}"
 
+# 不要なイメージがあった場合に削除
   - name: absent base_os image
     docker_image:
       name: "{{ item.image_name }}:{{ item.image_tag }}"
       state: absent
     with_items: "{{ yum_repo }}"
 
+# 作成したコンテナからイメージを作成
   - name: docker commit
     shell: docker commit "{{ item.base_os_name }}" "{{ item.image_name }}:{{ item.image_tag }}"
     with_items: "{{ yum_repo }}"
 
+# コンテナを削除
   - name: absent base_os container
     docker_container:
       name: "{{ item.base_os_name }}"

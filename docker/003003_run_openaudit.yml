@@ -1,3 +1,10 @@
+# 概要
+# openauditのコンテナ作成
+# 説明
+#  設定ファイル(vars/config.yml)に記載されている、openauditのコンテナを作成する。
+# 実行コマンド
+#  ansible-playbook 003003_run_openaudit.yml -i hosts -l localhost,openaudit -vvv
+
 - hosts: dockerhost
   become: yes
 
@@ -11,6 +18,7 @@
       name: "{{ item.image_name }}"
       image: "{{ item.image_name }}:{{ item.image_tag }}"
       hostname: "{{ item.image_name }}"
+      restart_policy: always
       networks:
         - name: "{{ network_name }}"
           ipv4_address: "{{ item.ip }}"
@@ -25,3 +33,65 @@
       ports:
         - "{{ openaudit_port }}:80"
     with_items: "{{ openaudit }}"
+
+- hosts: openaudit
+
+  vars_files:
+    - "vars/config.yml"
+
+  tasks:
+
+# 情報収集用のスクリプトを、接続先IP・ポートを変更して配置
+
+# スクリプトをコピー
+  - name: copy audit scripts
+    shell: cp -pr /usr/local/open-audit/other /var/www/html/
+
+# *.shのファイルリストを取得
+  - name: file list (/var/www/html/other/*.sh)
+    shell: 'find /var/www/html/other/ -maxdepth 1 -type f -name "*.sh"'
+    register: filelist
+    changed_when: false
+
+# 取得したファイルリストの接続先を変更
+  - name: edit /var/www/html/other/*.sh
+    replace:
+      path: "{{ item }}"
+      regexp: "http://localhost"
+      replace: "http://{{ host_ip }}:{{ openaudit_port }}"
+    with_items: "{{ filelist.stdout_lines }}"
+
+# 取得したファイルリストのオンライン送信のフラグを変更
+  - name: edit /var/www/html/other/*.sh
+    replace:
+      path: "{{ item }}"
+      regexp: 'submit_online="n"'
+      replace: 'submit_online="y"'
+    with_items: "{{ filelist.stdout_lines }}"
+
+# 取得したファイルリストのファイル作成を変更
+  - name: edit /var/www/html/other/*.sh
+    replace:
+      path: "{{ item }}"
+      regexp: 'create_file="y"'
+      replace: 'create_file="n"'
+    with_items: "{{ filelist.stdout_lines }}"
+
+# *.vbsも同様に処理したかったが、文字コードの違うファイルが含まれており、
+# 処理が正常に行えなかったので、sedで変換する方式に変更
+
+#  - name: file list (/var/www/html/other/*.sh)
+#    shell: 'find /var/www/html/other/ -maxdepth 1 -type f -name "*.vbs"'
+#    register: filelist
+#    changed_when: false
+
+# Part of VBS is other than UTF 8.
+# 'replace' corresponds only to UTF 8 character code.
+# Replace with sed.
+  - name: edit /var/www/html/other/*.vbs
+    shell: sed -i -e 's/http\:\/\/localhost/http\:\/\/{{ host_ip }}:8000/g' /var/www/html/other/*.vbs
+#    replace:
+#      path: "{{ item }}"
+#      regexp: "http://localhost"
+#      replace: "http://{{ host_ip }}:{{ openaudit_port }}"
+#    with_items: "{{ filelist.stdout_lines }}"
