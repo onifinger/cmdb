@@ -28,3 +28,51 @@
 # cd /opt/cmdb/docker
 # ansible-playbook 003005_run_superset.yml -i hosts -l localhost -vvv
 ```
+
+## dockerコマンドの使い方
+
+コンテナの起動
+```
+# docker start コンテナ名
+```
+
+コンテナの停止
+```
+# docker stop コンテナ名
+```
+
+コンテナの再起動
+```
+# docker restart コンテナ名
+```
+
+起動中のコンテナの確認
+```
+# docker ps
+```
+
+停止中も含めてコンテナの確認
+```
+# docker ps -a
+```
+
+イメージの確認
+```
+# docker images
+```
+
+dockerの停止
+```
+# systemctl stop docker
+```
+
+dockerの起動
+```
+# systemctl start docker
+```
+
+dockerの再起動
+```
+# systemctl restart docker
+```
+
