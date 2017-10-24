@@ -1,8 +1,8 @@
 # 内部で使用するドメイン名
-local_zone: localdomain
+local_zone: ypro.local
 
 # ホスト名
-host_name: "rhel7.{{ local_zone }}"
+host_name: "cmdb.{{ local_zone }}"
 
 # 基本ディレクトリ
 base_dir: /root/work/cmdb

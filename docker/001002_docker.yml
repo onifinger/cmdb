@@ -4,6 +4,9 @@
 #  001001_os.ymlでＯＳ設定完了後、dockerの設定を行う。
 # 実行コマンド
 #  ansible-playbook 001002_docker.yml -i hosts -vvv
+# 変更履歴
+#  2017/10/24
+#   python2-pipは不要のため削除
 
 - hosts: dockerhost
   become: yes
@@ -25,7 +28,7 @@
       state: latest
     with_items:
       - docker
-      - python2-pip
+#      - python2-pip
       - python-docker-py
       - python-docker-pycreds
 

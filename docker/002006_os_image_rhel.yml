@@ -1,0 +1,139 @@
+# 概要
+#  ベースとなるOSのイメージ作成(RHEL)
+# 説明
+#  設定ファイル(vars/config.yml)に記載されている、OSのイメージを作成する。(RHEL)
+# 実行コマンド
+#  ansible-playbook 002006_os_image_rhel.yml -i hosts -l localhost,rhel -vvv
+
+- hosts: dockerhost
+  become: yes
+
+  vars_files:
+    - "vars/config.yml"
+
+# proxyを使用しない環境ではコメントアウト
+#  environment:
+#    https_proxy: "http://{{ local_proxy }}"
+#    http_proxy: "http://{{ local_proxy }}"
+
+  tasks:
+
+# registry.access.redhat.comからRHELの公式イメージを取得
+  - name: docker pull os_image(RHEL)
+    docker_image:
+      name: "{{ item.base_os_name }}:{{ item.base_os_tag }}"
+    with_items: "{{ rhel_images }}"
+
+# イメージからコンテナを起動(rhel)
+  - name: Create a os container
+    docker_container:
+      name: "{{ item.image_name }}"
+      image: "{{ item.base_os_name }}:{{ item.base_os_tag }}"
+      command: ["sleep", "infinity"]
+      networks:
+        - name: "{{ network_name }}"
+          ipv4_address: "{{ item.ip }}"
+      purge_networks: yes
+    with_items: "{{ rhel_images }}"
+
+# 起動したrhelのコンテナに対して変更を行う
+- hosts: rhel
+  gather_facts: no
+
+  vars_files:
+    - "vars/config.yml"
+
+# proxyを使用しない環境ではコメントアウト
+#  environment:
+#    https_proxy: "http://{{ local_proxy }}"
+#    http_proxy: "http://{{ local_proxy }}"
+
+  tasks:
+
+# yumコマンドを実行することで、ホストの資格情報がコンテナに設定される
+  - name: yum repolist 
+    raw: yum repolist
+
+# リポジトリを追加
+  - name: yum-config-manager
+    raw: "{{ item }}"
+    with_items:
+      - yum-config-manager --enable rhel-7-server-extras-rpms
+      - yum-config-manager --enable rhel-7-server-optional-rpms
+      - yum-config-manager --enable rhel-server-rhscl-7-rpms
+    when: inventory_hostname == 'rhel7'
+
+# リポジトリを追加
+  - name: yum-config-manager
+    raw: "{{ item }}"
+    with_items:
+      - yum-config-manager --enable rhel-6-server-extras-rpms
+      - yum-config-manager --enable rhel-6-server-optional-rpms
+      - yum-config-manager --enable rhel-server-rhscl-6-rpms
+    when: inventory_hostname == 'rhel6'
+
+# EPELリポジトリのファイルを取得
+  - name: download epel-release
+    get_url:
+      url: "{{ item.url }}"
+      dest: "{{ item.dest }}"
+    with_items:
+      - { url: "https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm", dest: "/tmp/epel-release.rpm" }
+    when: inventory_hostname == 'rhel7'
+
+# EPELリポジトリのファイルを取得
+  - name: download epel-release
+    get_url:
+      url: "{{ item.url }}"
+      dest: "{{ item.dest }}"
+    with_items:
+      - { url: "https://dl.fedoraproject.org/pub/epel/epel-release-latest-6.noarch.rpm", dest: "/tmp/epel-release.rpm" }
+    when: inventory_hostname == 'rhel6'
+
+# EPELのリポジトリを追加
+  - name: yum install epel-release
+    yum:
+      name: "{{ item }}"
+      state: present
+    with_items:
+      - "/tmp/epel-release.rpm"
+
+# マイナーバージョンリリース時のパッケージを最新状態までアップデート
+  - name: yum update
+    yum:
+      name: "*"
+      state: latest
+
+- hosts: dockerhost
+  become: yes
+
+  vars_files:
+    - "vars/config.yml"
+
+  tasks:
+# コンテナを停止
+  - name: Stop base_os container
+    docker_container:
+      name: "{{ item.image_name }}"
+      state: stopped
+    with_items: "{{ rhel_images }}"
+
+# 不要なイメージがあった場合に削除
+  - name: absent base_os image
+    docker_image:
+      name: "{{ item.image_name }}:{{ item.image_tag }}"
+      state: absent
+    with_items: "{{ rhel_images }}"
+
+# 作成したコンテナからイメージを作成
+  - name: docker commit
+    shell: docker commit "{{ item.image_name }}" "{{ item.image_name }}:{{ item.image_tag }}"
+    with_items: "{{ rhel_images }}"
+
+# コンテナを削除
+  - name: absent base_os container
+    docker_container:
+      name: "{{ item.image_name }}"
+      state: absent
+    with_items: "{{ rhel_images }}"
+

@@ -1,6 +1,8 @@
 localhost ansible_connection=local
 centos6 ansible_connection=docker
 centos7 ansible_connection=docker
+rhel6 ansible_connection=docker
+rhel7 ansible_connection=docker
 repocentos6 ansible_connection=docker
 repocentos7 ansible_connection=docker
 openaudit ansible_connection=docker
@@ -13,6 +15,10 @@ localhost
 [centos]
 centos6
 centos7
+
+[rhel]
+rhel6
+rhel7
 
 [repocentos]
 repocentos6

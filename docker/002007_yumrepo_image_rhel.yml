@@ -1,0 +1,83 @@
+# 概要
+#  yumリポジトリサーバのイメージ作成(RHEL)
+# 説明
+#  設定ファイル(vars/config.yml)に記載されている、yumのリポジトリサーバのイメージを作成する。(RHEL)
+# 実行コマンド
+#  ansible-playbook 002007_yumrepo_image_rhel.yml -i hosts -l localhost,rhel -vvv
+
+- hosts: dockerhost
+  become: yes
+
+  vars_files:
+    - "vars/config.yml"
+
+# proxyを使用しない環境ではコメントアウト
+#  environment:
+#    https_proxy: "http://{{ local_proxy }}"
+#    http_proxy: "http://{{ local_proxy }}"
+
+  tasks:
+
+# OSイメージからコンテナを起動
+  - name: Create a os container
+    docker_container:
+      name: "{{ item.image_name }}"
+      image: "{{ item.image_name }}:{{ item.image_tag }}"
+      command: ["sleep", "infinity"]
+      networks:
+        - name: "{{ network_name }}"
+          ipv4_address: "{{ item.ip }}"
+      purge_networks: yes
+    with_items: "{{ rhel_images }}"
+
+- hosts: rhel
+  gather_facts: no
+
+  vars_files:
+    - "vars/config.yml"
+
+  tasks:
+
+# yumリポジトリサーバに必要なパッケージのインストール
+  - name: yum install yum-utils createrepo
+    yum:
+      name: "{{ item }}"
+      state: latest
+    with_items:
+      - yum-utils
+      - createrepo
+
+- hosts: dockerhost
+  become: yes
+
+  vars_files:
+    - "vars/config.yml"
+
+  tasks:
+
+# コンテナを停止
+  - name: Stop base_os container
+    docker_container:
+      name: "{{ item.base_os_name }}"
+      state: stopped
+    with_items: "{{ rhel_yum_repo }}"
+
+# 不要なイメージがあった場合に削除
+  - name: absent base_os image
+    docker_image:
+      name: "{{ item.image_name }}:{{ item.image_tag }}"
+      state: absent
+    with_items: "{{ rhel_yum_repo }}"
+
+# 作成したコンテナからイメージを作成
+  - name: docker commit
+    shell: docker commit "{{ item.base_os_name }}" "{{ item.image_name }}:{{ item.image_tag }}"
+    with_items: "{{ rhel_yum_repo }}"
+
+# コンテナを削除
+  - name: absent base_os container
+    docker_container:
+      name: "{{ item.base_os_name }}"
+      state: absent
+    with_items: "{{ rhel_yum_repo }}"
+
