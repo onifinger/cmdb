@@ -6,10 +6,16 @@
 # ansible-playbook 003001_run_httpd.yml -i hosts -l localhost -vvv
 ```
 
-## yumのリポジトリサーバのコンテナの作成
+## CentOS の yumのリポジトリサーバのコンテナの作成
 ```
 # cd /opt/cmdb/docker
 # ansible-playbook 003002_run_yumrepo.yml -i hosts -l localhost -vvv
+```
+
+## RHEL の yumのリポジトリサーバのコンテナの作成
+```
+# cd /opt/cmdb/docker
+# ansible-playbook 003006_run_yumrepo_rhel.yml -i hosts -l localhost -vvv
 ```
 
 ## OpenAuditのコンテナの作成
