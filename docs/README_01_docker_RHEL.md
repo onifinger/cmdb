@@ -4,7 +4,7 @@
 Red Hat Enterprise Linux Server release 7.4 (Maipo)を最小構成でインストール  
 ※今回は仮想マシンで作成
 
-### RHNへの登録 
+### RedHatへの登録 
 ```
 # subscription-manager register
 ユーザー名: XXXXX
