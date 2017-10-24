@@ -41,6 +41,7 @@ docker単体であれば追加不要だが、今回、ansibleを使用するた�
 ## OSと基本となるソフトの設定
 ```
 # cd /opt/cmdb/docker
+# cp vars/config.yml_sample vars/config.yml
 # vi vars/config.yml
 ```
 必要応じて適宜変更
