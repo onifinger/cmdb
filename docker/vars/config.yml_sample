@@ -87,3 +87,19 @@ superset_user: { username: 'admin', userfirstname: 'admin', userlastname: 'admin
 superset_version: 0.19.1
 superset:
   - { base_os_name: 'centos7', base_os_tag: '7.3.1611_v001', image_name: 'superset', image_tag: '0.19.1_v001', ip: '192.168.10.132' }
+
+# parserの設定
+parser_pgsql_repo_url: https://download.postgresql.org/pub/repos/yum/9.6/redhat/rhel-7-x86_64/
+parser_pgsql_repo_file: pgdg-centos96-9.6-3.noarch.rpm
+parser_pgsql_user: viewuser
+parser_pgsql_pass: 48G8V6KavkbxMRsB
+parser_pgsql_adminuser: adminuser
+parser_pgsql_adminpass: 48G8V6KavkbxMRsB
+parser_embulk_url: https://dl.embulk.org/
+parser_embulk_file: embulk-latest.jar
+parser_pgadmin4_shell: /usr/pgadmin4-v2/bin/pgadmin4-v2-web-setup.sh
+parser_pgadmin4_email: root@localhost.localdomain
+parser_pgadmin4_pwd: password
+parser_port: 83
+parser:
+  - { base_os_name: 'centos7', base_os_tag: '7.3.1611_v001', image_name: 'parser', image_tag: 'v001', ip: '192.168.10.133' }
