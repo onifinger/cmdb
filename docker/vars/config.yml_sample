@@ -56,11 +56,11 @@ rhel_images:
 # yumリポジトリサーバのイメージ作成に使用する、ベースのＯＳイメージの情報と、作成後のイメージの情報。
 yum_repo:
   - { base_os_name: 'centos7', base_os_tag: '7.4.1708_v001', image_name: 'repocentos7', image_tag: 'v001', ip: '192.168.10.128', dir: '/var/www/html/centos/7/x86_64/' }
-  - { base_os_name: 'centos6', base_os_tag: '6.9_v002', image_name: 'repocentos6', image_tag: 'v001', ip: '192.168.10.129', dir: '/var/www/html/centos/6/x86_64/' }
+  - { base_os_name: 'centos6', base_os_tag: '6.9_v002', image_name: 'repocentos6', image_tag: 'v002', ip: '192.168.10.129', dir: '/var/www/html/centos/6/x86_64/' }
 
 rhel_yum_repo:
   - { base_os_name: 'rhel7', base_os_tag: '7.4-120_v001', image_name: 'reporhel7', image_tag: 'v001', ip: '192.168.10.133', dir: '/var/www/html/rhel/7/x86_64/' }
-  - { base_os_name: 'rhel6', base_os_tag: '6.9_v002', image_name: 'reporhel6', image_tag: 'v001', ip: '192.168.10.134', dir: '/var/www/html/rhel/6/x86_64/' }
+  - { base_os_name: 'rhel6', base_os_tag: '6.9_v002', image_name: 'reporhel6', image_tag: 'v002', ip: '192.168.10.134', dir: '/var/www/html/rhel/6/x86_64/' }
 
 # openauditの設定
 openaudit_install_file: OAE-Linux-x86_64-release_1.12.10.1.run
@@ -68,8 +68,8 @@ openaudit_install_file: OAE-Linux-x86_64-release_1.12.10.1.run
 openaudit_mysql_pass: 48G8V6KavkbxMRsB
 openaudit_port: 8000
 openaudit:
-  - { base_os_name: 'centos6', base_os_tag: '6.9_v002', image_name: 'openaudit', image_tag: '1.12.10.1_v001', ip: '192.168.10.130' }
-#  - { base_os_name: 'centos7', base_os_tag: '7.4.1708_v001', image_name: 'openaudit', image_tag: '2.0.2_v001', ip: '192.168.10.130' }
+  - { base_os_name: 'centos6', base_os_tag: '6.9_v002', image_name: 'openaudit', image_tag: '1.12.10.1_v002', ip: '192.168.10.130' }
+#  - { base_os_name: 'centos7', base_os_tag: '7.4.1708_v001', image_name: 'openaudit', image_tag: '2.0.2_v002', ip: '192.168.10.130' }
 
 # redashの設定
 redash_base_path: /opt/redash
@@ -81,14 +81,14 @@ redash_tarball: /tmp/redash.tar.gz
 redash_files_base_url: "https://raw.githubusercontent.com/getredash/redash/{{ redash_branch }}/setup/ubuntu/files"
 redash_port: 82
 redash:
-  - { base_os_name: 'centos7', base_os_tag: '7.4.1708_v001', image_name: 'redash', image_tag: '2.0.0.b2990_v001', ip: '192.168.10.131' }
+  - { base_os_name: 'centos7', base_os_tag: '7.4.1708_v001', image_name: 'redash', image_tag: '2.0.0.b2990_v002', ip: '192.168.10.131' }
 
 # supersetの設定
 superset_port: 8088
 superset_user: { username: 'admin', userfirstname: 'admin', userlastname: 'admin', email: 'root@localhost.localdomain', password: '48G8V6KavkbxMRsB' }
 superset_version: 0.19.1
 superset:
-  - { base_os_name: 'centos7', base_os_tag: '7.4.1708_v001', image_name: 'superset', image_tag: '0.19.1_v001', ip: '192.168.10.132' }
+  - { base_os_name: 'centos7', base_os_tag: '7.4.1708_v001', image_name: 'superset', image_tag: '0.19.1_v002', ip: '192.168.10.132' }
 
 # parserの設定
 parser_pgsql_repo_url: https://download.postgresql.org/pub/repos/yum/9.6/redhat/rhel-7-x86_64/
