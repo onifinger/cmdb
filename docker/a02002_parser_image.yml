@@ -1,0 +1,288 @@
+# 概要
+#  parserのイメージ作成(embulk,postgresql,pgadmin4,parser)
+# 説明
+#  設定ファイル(vars/config.yml)に記載されている、parserのイメージを作成する。
+# 実行コマンド
+#  ansible-playbook a02002_parser_image.yml -i hosts -l localhost,centos7 -vvv
+
+- hosts: dockerhost
+  become: yes
+
+  vars_files:
+    - "vars/config.yml"
+
+# proxyを使用しない環境ではコメントアウト
+#  environment:
+#    https_proxy: "http://{{ local_proxy }}"
+#    http_proxy: "http://{{ local_proxy }}"
+
+  tasks:
+
+# OSイメージからコンテナを起動
+  - name: Create a os container
+    docker_container:
+      name: "{{ item.image_name }}"
+      image: "{{ item.image_name }}:{{ item.image_tag }}"
+      command: ["sleep", "infinity"]
+      networks:
+        - name: "{{ network_name }}"
+          ipv4_address: "{{ item.ip }}"
+      purge_networks: yes
+    with_items: "{{ images }}"
+#    when: item.image_name == 'centos7'
+
+- hosts: centos7
+  gather_facts: no
+
+  vars_files:
+    - "vars/config.yml"
+
+# proxyを使用しない環境ではコメントアウト
+#  environment:
+#    https_proxy: "http://{{ local_proxy }}"
+#    http_proxy: "http://{{ local_proxy }}"
+
+  tasks:
+
+# localeでja_JPを設定できるように、yum.confの変更
+  - name: edit /etc/yum.conf
+    replace:
+      path: "{{ item }}"
+      regexp: '^(override_install_langs.*)$'
+      replace: '#\1'
+    with_items: "/etc/yum.conf"
+
+# localeの再設定（glibc-commonの再インストール）
+  - name: yum -y reinstall glibc-common
+    shell: yum -y reinstall glibc-common
+
+# localeの設定（localdef）
+#  - name: localdef
+#    shell: localedef -v -c -i ja_JP -f UTF-8 ja_JP.UTF-8
+
+# localeの設定
+  - name: edit /etc/locale.conf 
+    replace:
+      path: "{{ item }}"
+      regexp: '^(LANG.*)$'
+      replace: 'LANG=ja_JP.utf8'
+    with_items: "/etc/locale.conf"
+
+# ディレクトリの作成
+  - name: create directory for embulk
+    file:
+      path: "{{ item }}"
+      state: directory
+    with_items:
+      - "/root/.embulk/bin"
+
+# ファイルのコピー
+  - name: Copies files to remote locations
+    copy:
+      src: "{{ item.src }}"
+      dest: "{{ item.dest }}"
+      mode: u=rwx,g=r,o=r
+    with_items:
+      - { src: "files/parser/parser.sh", dest: "/usr/local/bin/parser.sh" }
+      - { src: "files/parser/postgresq_start.sh", dest: "/usr/local/bin/postgresq_start.sh" }
+      - { src: "files/parser/postgresq_stop.sh", dest: "/usr/local/bin/postgresq_stop.sh" }
+      - { src: "files/parser/Main3.py", dest: "/root/Main3.py" }
+
+# PostgreSQLのリポジトリのダウンロード
+  - name: download postgresql repository
+    get_url:
+      url: "{{ parser_pgsql_repo_url }}{{ parser_pgsql_repo_file }}"
+      dest: "/root/{{ parser_pgsql_repo_file }}"
+
+# PostgreSQLのリポジトリのインストール
+  - name: yum install postgresql repo
+    yum:
+      name: "/root/{{ parser_pgsql_repo_file }}"
+      state: present
+
+# 動作に必要なパッケージのインストール
+  - name: yum install
+    yum:
+      name: "{{ item }}"
+      state: latest
+    with_items:
+      - postgresql96-server
+      - postgresql96-contrib
+      - ogr_fdw96
+      - tds_fdw96
+      - mysql_fdw_96
+      - postgis24_96
+      - freexl
+      - pgadmin4-v2-web
+      - mariadb-devel
+      - java-1.8.0-openjdk
+      - python-pip
+      - rh-python36
+
+# pgAdmin4の対話式インストーラに対応するため、ansibleのモジュールで必要とするパッケージのインストール。
+  - name: pip install pexpect
+    pip:
+      name: "{{ item }}"
+      state: latest
+    with_items:
+      - pexpect
+
+# PostgreSQLの環境変数
+  - name: Copies files to remote locations(postgresq.sh)
+    copy:
+      src: "{{ item.src }}"
+      dest: "{{ item.dest }}"
+    with_items:
+     - { src: "files/parser/postgresq.sh", dest: "/etc/profile.d/postgresq.sh" }
+
+# postgresqlの初期化
+  - name: postgresql initdb
+    shell: su - postgres -c "initdb --auth=ident --locale=C --encoding=UTF8"
+
+# postgreSQLに外部から接続を許可
+  - name: Allow postgreql access from LAN
+    lineinfile:
+      dest: "/var/lib/pgsql/9.6/data/pg_hba.conf"
+      line: "host	all	all	{{ item }}	md5"
+    with_items:
+     - "{{ default_bridge }}"
+     - "{{ original_bridge }}"
+
+# postgreSQLのリッスンアドレスの設定
+  - name: Set listen address of PostgreSQL
+    lineinfile:
+      path: /var/lib/pgsql/9.6/data/postgresql.conf
+      insertbefore: "#listen_addresses.*"
+      line: "listen_addresses = \'*\'"
+
+# postgreSQLの起動
+  - name: start postgresql
+    shell: /usr/local/bin/postgresq_start.sh
+
+# databaseの作成
+  - name: postgresql createdb
+    shell: su - postgres -c "createdb ci --locale=C --encoding=UTF8 --template=template0"
+
+# database user の作成
+  - name: postgresql create user
+    shell: su - postgres -c "echo create user {{ parser_pgsql_user }} with password \'{{ parser_pgsql_pass }}\' | psql"
+
+  - name: postgresql grant user
+    shell: su - postgres -c "echo grant select on all tables in schema public to {{ parser_pgsql_user }} | psql ci"
+
+  - name: postgresql create admin user
+    shell: su - postgres -c "echo create user {{ parser_pgsql_adminuser }} with password \'{{ parser_pgsql_adminpass }}\' | psql"
+
+  - name: postgresql grant admin user
+    shell: su - postgres -c "echo grant all on all tables in schema public to {{ parser_pgsql_adminuser }} | psql ci"
+
+# embulkをインストールするディレクトリの作成
+  - name: create directory for embulk
+    file:
+      path: "/root/.embulk/bin"
+      state: directory
+
+# embulkのダウンロード
+  - name: download embulk
+    get_url:
+      url: "{{ parser_embulk_url }}{{ parser_embulk_file }}"
+      dest: "/root/.embulk/bin/embulk"
+      mode: u+x
+
+# embulkのPATHを設定
+  - name: set path for embulk
+    lineinfile:
+      dest: "/root/.bashrc"
+      line: 'export PATH="$HOME/.embulk/bin:$PATH"'
+
+# embulkのPostgreSQL出力用プラグインのインストール
+  - name: postgresql plugin
+    shell: bash -lc "embulk gem install embulk-output-postgresql"
+    args:
+      chdir: /root/
+
+# embulkの雛形の作成
+  - name: create embulk sample
+    shell: bash -lc "embulk example /root/try1"
+
+# pgadmin4のインストーラの実行（対話式）
+  - name: pgadmin4 install
+    expect:
+      command: "{{ parser_pgadmin4_shell }}"
+      responses:
+        "Email address: ": "{{ parser_pgadmin4_email }}"
+        "Password: ": "{{ parser_pgadmin4_pwd }}"
+        "Retype password:": "{{ parser_pgadmin4_pwd }}"
+        '#\?':
+          - "1"
+          - "2"
+      timeout: 600
+
+# parserの環境変数
+  - name: Copies files to remote locations(python36.sh)
+    copy:
+      src: "{{ item.src }}"
+      dest: "{{ item.dest }}"
+    with_items:
+     - { src: "files/parser/python36.sh", dest: "/etc/profile.d/python36.sh" }
+
+# parserのalias
+  - name: set path for embulk
+    lineinfile:
+      dest: "/root/.bashrc"
+      line: 'alias Main3="python /opt/parser/Main3.py"'
+
+# parserで必要なxlrdのインストール
+  - name: install xlrd 
+    shell: bash -lc "pip install xlrd"
+
+# postgreSQLの停止
+  - name: stop postgresql
+    shell: /usr/local/bin/postgresq_stop.sh
+
+# postgresqlのバックアップ
+  - name: copy postgresql datadir
+    shell: cp -pr /var/lib/pgsql/9.6/data/ /root/
+
+# 初期データ（ログ）のバックアップ
+  - name: copy log dir
+    shell: cp -pr /var/log/ /root/
+
+- hosts: dockerhost
+  become: yes
+
+  vars_files:
+    - "vars/config.yml"
+
+# proxyを使用しない環境ではコメントアウト
+#  environment:
+#    https_proxy: "http://{{ local_proxy }}"
+#    http_proxy: "http://{{ local_proxy }}"
+
+  tasks:
+
+# コンテナを停止
+  - name: Stop base_os container
+    docker_container:
+      name: "{{ item.image_name }}"
+      state: stopped
+    with_items: "{{ images }}"
+
+# 不要なイメージがあった場合に削除
+  - name: absent base_os image
+    docker_image:
+      name: "{{ item.image_name }}:{{ item.image_tag }}"
+      state: absent
+    with_items: "{{ parser }}"
+
+# 作成したコンテナからイメージを作成
+  - name: docker commit
+    shell: docker commit "{{ item.base_os_name }}" "{{ item.image_name }}:{{ item.image_tag }}"
+    with_items: "{{ parser }}"
+
+# コンテナを削除
+  - name: absent base_os container
+    docker_container:
+      name: "{{ item.image_name }}"
+      state: absent
+    with_items: "{{ images }}"

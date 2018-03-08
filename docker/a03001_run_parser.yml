@@ -1,0 +1,39 @@
+# 概要
+# parserのコンテナ作成
+# 説明
+#  設定ファイル(vars/config.yml)に記載されている、redashのコンテナを作成する。
+# 実行コマンド
+#  ansible-playbook a03001_run_parser.yml -i hosts -l localhost -vvv
+
+- hosts: dockerhost
+  become: yes
+
+  vars_files:
+    - "vars/config.yml"
+
+  tasks:
+
+  - name: Create a parser container
+    docker_container:
+      name: "{{ item.image_name }}"
+      image: "{{ item.image_name }}:{{ item.image_tag }}"
+      hostname: "{{ item.image_name }}"
+      restart_policy: always
+      networks:
+        - name: "{{ network_name }}"
+          ipv4_address: "{{ item.ip }}"
+      volumes:
+        - "/opt/dockerpv/{{ item.image_name }}/var/log:/var/log"
+        - "/opt/dockerpv/{{ item.image_name }}/var/lib/pgsql/9.6/data:/var/lib/pgsql/9.6/data/"
+        - "/etc/localtime:/etc/localtime:ro"
+        - "/opt/dockerpv/{{ item.image_name }}/opt/parser:/opt/parser"
+        - "/opt/dockerpv/{{ item.image_name }}/opt/data:/opt/data"
+      command: ["sh", "parser.sh"]
+      purge_networks: yes
+      log_driver: syslog
+      log_options: "tag={{ item.image_name }}"
+      ports:
+        - "{{ parser_port }}:80"
+      env:
+        LANG: ja_JP.utf8
+    with_items: "{{ parser }}"
